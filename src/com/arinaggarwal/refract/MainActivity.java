@@ -571,7 +571,7 @@ public class MainActivity extends Activity {
 
         // Floating status pill (per the tvOS Control Center reference): one Liquid Glass capsule
         // holding the network icon and time, then round buttons (Assistant, Movies, Search,
-        // Control Center) and the profile avatar. A focused button becomes a solid white circle
+        // Settings, Control Center) and the profile avatar. A focused button becomes a solid white circle
         // and lifts; Refresh moved into Control Center so the pill stays uncluttered.
         int btn = dp(34);
         int pillPad = dp(5);
@@ -607,6 +607,7 @@ public class MainActivity extends Activity {
         assistantButton = pillButton("waveform", btn, "Google Assistant", this::invokeAssistant);
         moviesButton = pillButton("film", btn, "Movies", this::showMovies);
         searchButton = pillButton("search", btn, "Search", () -> showSearch(null));
+        settingsButton = pillButton("gear", btn, "Refract Settings", this::openRefractSettings);
         ccButton = pillButton("controls", btn, "Control Center", this::showControlCenter);
 
         int av = btn;
@@ -630,7 +631,7 @@ public class MainActivity extends Activity {
                 v.animate().scaleX(has ? 1.18f : 1f).scaleY(has ? 1.18f : 1f).translationZ(has ? dp(8) : 0)
                         .setDuration(200).setInterpolator(LIFT).start());
         avatar.setOnClickListener(v -> showProfilePicker(false));
-        statusRow = new ArrayList<>(Arrays.asList(assistantButton, moviesButton, searchButton, ccButton, avatar));
+        statusRow = new ArrayList<>(Arrays.asList(assistantButton, moviesButton, searchButton, settingsButton, ccButton, avatar));
 
         // The status pill and, left of it while music plays in the background, the Now Playing pill.
         statusBar = new LinearLayout(this);
@@ -2218,7 +2219,7 @@ public class MainActivity extends Activity {
     /** Carousel focused: the dock slides away and the artwork takes the whole screen (tvOS Top Shelf). */
     boolean heroRequested;
 
-    ImageView avatarView, ccButton, refreshButton, searchButton, assistantButton, moviesButton, netIcon;
+    ImageView avatarView, ccButton, refreshButton, searchButton, settingsButton, assistantButton, moviesButton, netIcon;
     /** The status pill's buttons, left to right. */
     List<View> statusRow;
     LinearLayout statusBar;
@@ -2412,7 +2413,7 @@ public class MainActivity extends Activity {
         }
         int si = statusRow == null ? -1 : statusRow.indexOf(f);
         if (si >= 0) {
-            // Status pill, left to right: Assistant, Movies, Search, Control Center, profile.
+            // Status pill, left to right: Assistant, Movies, Search, Settings, Control Center, profile.
             if (k == KeyEvent.KEYCODE_DPAD_LEFT) {
                 if (down) {
                     if (si > 0) statusRow.get(si - 1).requestFocus();
@@ -3504,6 +3505,11 @@ public class MainActivity extends Activity {
      * connected, Do Not Disturb, a running timer) get a coloured glyph; the focused tile turns
      * white and lifts. Home stays visible around it.
      */
+    void openRefractSettings() {
+        returningFromSettings = true;
+        startActivity(new Intent(this, SettingsActivity.class));
+    }
+
     void showControlCenter() {
         dropPicker();
         stopSway(null);
@@ -3565,8 +3571,7 @@ public class MainActivity extends Activity {
                         showInputs(ccButton);
                         return;
                     case "gear":
-                        returningFromSettings = true;
-                        startActivity(new Intent(this, SettingsActivity.class));
+                        openRefractSettings();
                         break;
                     default:
                         refreshAll();

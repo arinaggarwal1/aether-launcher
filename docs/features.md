@@ -67,7 +67,7 @@ screen. The initial updater version must first be installed using ADB.
 | Dock | Up | Carousel |
 | Carousel | Left / Right | Previous / next item (wraps around) |
 | Carousel (Continue Watching item) | Right | Moves from **Resume** to **Remove** |
-| Status row | Left / Right | Weather pill ⇄ Refresh ⇄ Search ⇄ Control Center ⇄ avatar |
+| Status row | Left / Right | Weather ⇄ Assistant ⇄ Movies ⇄ Search ⇄ Refract Settings ⇄ Control Center ⇄ avatar |
 | Anywhere on Home | Hold Back for 1 second | Opens Search (a short press of Back works as before) |
 | Anywhere on Home (and the idle screen) | Voice / mic / Search key on the remote | The voice flow: edge glow, then the TV's assistant, else Search with dictation. Many TVs give `ASSIST`/`VOICE_ASSIST` straight to Google Assistant before any app sees it |
 | Now Playing pill | OK | Back to the app that is playing |
@@ -254,7 +254,7 @@ Back, at 60% of the normal level. Settings → Home → Navigation sounds.
 
 ## Settings
 
-Opened from the gear in Control Center. A main list opens a page per section (Back returns):
+Opened from the gear in the top status row or Control Center. A main list opens a page per section (Back returns):
 Profiles, Top Shelf, Presentation, Inputs, Weather, Continue Watching, Home, Permissions, About, and
 the TV's own settings.
 
@@ -346,7 +346,7 @@ Ambient*).
 ## Status pill, Assistant and Control Center
 
 The status row is a single floating glass pill: connection, time, voice (Google Assistant), Movies,
-Search, Control Center and the profile avatar. The voice button plays a short edge glow, then
+Search, Refract Settings, Control Center and the profile avatar. The voice button plays a short edge glow, then
 opens the TV's assistant (`ASSIST`, then `VOICE_ASSIST`, web search, global search), falling back
 to Refract's Search with dictation. Nothing listens until you press it.
 
