@@ -1,8 +1,6 @@
 name: Signed custom APK
 
 on:
-  push:
-    branches: [feature/custom-folders-updates]
   release:
     types: [published]
   workflow_dispatch:
