@@ -13,6 +13,7 @@ Interface Guidelines, then tuned to run at 60 fps on a low-end Mali-450 GPU.
 
 ## Contents
 
+- **[Updating your launcher](updating-your-launcher.md)** — build and install future updates.
 - **[Getting started](getting-started.md)** — install the tools, build, run on a TV or the
   emulator, developer shortcuts, troubleshooting.
 - **[Features](features.md)** — everything Refract does: setup, Home, carousel, weather, Control
@@ -22,7 +23,7 @@ Interface Guidelines, then tuned to run at 60 fps on a low-end Mali-450 GPU.
   start on boot, and the web API.
 - **[Architecture](architecture.md)** — code map, build, design decisions and performance notes.
 - **[Contributing](../CONTRIBUTING.md)** — workflow, code style, design/performance/permission
-  rules, testing and pull requests.
+  rules and testing.
 
 ## At a glance
 

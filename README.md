@@ -1,9 +1,9 @@
 # Refract Custom Launcher
 
-Your personal fork. **[Build, update, and safely migrate your Fire TV](docs/custom-updates.md)**.
+Your personal fork. **[Update the launcher on your Fire TV](docs/updating-your-launcher.md)**.
 
 Run `./build.sh` for a permanently signed `build/refract-custom.apk`. Publish a GitHub release
-to build a downloadable APK with the same identity. The original Refract remains installed.
+to build a downloadable APK with the same identity.
 
 ![Refract Launcher](docs/images/refract-banner.png)
 
@@ -89,13 +89,14 @@ adb shell am start -n com.arinaggarwal.refract/.MainActivity
 
 | | |
 |---|---|
+| **[Updating your launcher](docs/updating-your-launcher.md)** | Build and install updates on your Fire TV |
 | **[Getting started](docs/getting-started.md)** | Install the tools, build, run on a TV or the emulator, developer shortcuts |
 | **[Features](docs/features.md)** | Everything Refract does, by area |
 | **[Install and set up](docs/install.md)** | Make it the home screen, permissions, undo |
 | **[Presentation mode](docs/presentation.md)** | Sending content from a browser, the player, the web API |
 | **[Architecture](docs/architecture.md)** | Code map, build, design decisions, performance |
 | **[Attributions](ATTRIBUTIONS.md)** | Original app, fonts, code, photographers, data sources |
-| **[Contributing](CONTRIBUTING.md)** | Workflow, code style, design and performance rules, testing, pull requests |
+| **[Contributing](CONTRIBUTING.md)** | Workflow, code style, design and performance rules, testing |
 
 ## Requirements
 

@@ -14,14 +14,14 @@ covers how to work on it; to set up your machine first, see
 5. [Performance rules](#5-performance-rules)
 6. [Permissions and privacy rules](#6-permissions-and-privacy-rules)
 7. [Testing a change](#7-testing-a-change)
-8. [Pull requests](#8-pull-requests)
+8. [Change notes](#8-change-notes)
 9. [Good first areas](#9-good-first-areas)
 10. [Licensing](#10-licensing)
 
 ## 1. Project in one page
 
 ```
-AndroidManifest.xml      package com.hydrainnit.refract, activities/services/receivers
+AndroidManifest.xml      package com.arinaggarwal.refract, activities/services/receivers
 build.sh                 the whole build (aapt2 → javac → d8 → zipalign → apksigner)
 src/com/arinaggarwal/refract/   the launcher (≈9,400 lines of Java)
 src/com/arinaggarwal/refract/present/   Presentation mode: HTTP server, player, storage
@@ -51,10 +51,9 @@ Features are described in **[docs/features.md](docs/features.md)**.
 
 ## 2. Workflow
 
-- `main` is protected: **never push to it**. Work on a branch and open a pull request; one approval
-  is required to merge.
-- Branch names: `feature/<short-name>`, `fix/<short-name>`, `docs/<short-name>`.
-- Keep pull requests focused on one thing; several small ones beat one huge one.
+- This is a personal repository. Work directly when appropriate; pull requests and feature branches
+  are optional. Respect any actual branch protection configured on GitHub.
+- Keep changes focused and preserve the permanent package and signing identity.
 - Commit messages: a short imperative summary line (≤ 72 chars), a blank line, then *what* and
   *why* in a few bullets. Mention what you tested and on which device.
 
@@ -94,7 +93,7 @@ Match the code around you; consistency matters more than any rule here.
 Refract's whole point is to look and feel like Apple tvOS 26. Before building UI:
 
 - **Measure Apple's real UI first** (Apple's tvOS screenshots and the Human Interface Guidelines),
-  then implement and state the measured numbers in the code or PR. Don't improvise the look.
+  then implement and state the measured numbers in the code or change notes. Don't improvise the look.
 - Liquid Glass is for **controls and panels** (dock, buttons, Control Center, pills). App cards stay
   opaque.
 - Focus: lift/scale (cards 1.2×, controls ~1.06–1.12×), white focused state for buttons/tiles, never
@@ -123,7 +122,7 @@ adb shell dumpsys gfxinfo com.hydrainnit.refract reset
 adb shell dumpsys gfxinfo com.hydrainnit.refract | grep -E "Janky|50th|90th"
 ```
 
-Include the numbers in your PR. `--es perf <layer>` (see getting-started) helps find costly layers.
+Include the numbers in your change notes. `--es perf <layer>` (see getting-started) helps find costly layers.
 
 ## 6. Permissions and privacy rules
 
@@ -150,7 +149,7 @@ There is no automated test suite yet; changes are verified on devices. For every
 2. Install and exercise the change with the remote (or `adb shell input keyevent …`), including
    Back and Home from every new screen.
 3. Take screenshots (`adb exec-out screencap -p > shot.png`) of new or changed screens; attach them
-   to the PR.
+   with the change notes.
 4. If it touches the Home screen, record frame times (see §5).
 5. If it touches permissions, network or storage, test on both an Android 12 device and an
    **Android 9 / 1 GB RAM** device, and with the network off.
@@ -159,9 +158,9 @@ There is no automated test suite yet; changes are verified on devices. For every
 Checklist for UI changes: legible over bright and dark artwork · nothing clipped when focused ·
 reachable with arrows · Home returns to the dock · 720p and 1080p both look right.
 
-## 8. Pull requests
+## 8. Change notes
 
-Open the PR against `main` with:
+Record the following when relevant:
 
 - **What and why** (link the issue if there is one).
 - **Screenshots** of every changed screen.
@@ -169,7 +168,7 @@ Open the PR against `main` with:
 - **Frame-time numbers** for Home changes.
 - Docs updated if behaviour changed (`docs/features.md`, and `docs/architecture.md` for new files).
 
-Reviewers check: matches tvOS design, no performance regression, works with a remote, permissions
+Check that the result matches tvOS design, has no performance regression, works with a remote, permissions
 follow §6, code follows §3.
 
 ## 9. Good first areas
@@ -184,8 +183,8 @@ follow §6, code follows §3.
 
 ## 10. Licensing
 
-Refract Launcher is licensed under the **[Apache License 2.0](LICENSE)**. By submitting a pull request
-you agree that your contribution is licensed under the same terms (Apache-2.0, section 5). Keep the
+Refract Launcher is licensed under the **[Apache License 2.0](LICENSE)**. Contributions are licensed
+under the same terms (Apache-2.0, section 5). Keep the
 [NOTICE](NOTICE) file accurate: add an entry for any third-party code or asset you bring in, and only
 bring in code under a licence compatible with Apache-2.0 (MIT, BSD, Apache, OFL for fonts — not GPL).
 

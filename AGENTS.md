@@ -12,18 +12,20 @@
 - Private signing material lives in `~/.config/refract-launcher/signing` (or REFRACT_SIGNING_DIR).
   Never print or commit it, include it in APK artifacts, or generate a replacement when it is
   missing. Restore the user's existing encrypted backup instead. Keep only the public pin in Git.
-- The original working installation is `com.hydrainnit.refract` on a rooted Fire TV Cube 3rd gen,
-  Fire OS 7.7.1.7 (Android API 28, ARM 32-bit). Never automatically uninstall, replace, disable, or
-  clear its data. Build/update infrastructure must keep the two packages separate. Keep minSdk 24
+- The original installation was `com.hydrainnit.refract` on a rooted Fire TV Cube 3rd gen,
+  Fire OS 7.7.1.7 (Android API 28, ARM 32-bit); it was uninstalled at the user's request after backup.
+  Do not assume it is still available for rollback. Build/update infrastructure must keep the two
+  packages separate. Keep minSdk 24
   and compatibility with API 28; guard newer platform APIs. Avoid native ABI dependencies.
 - Never install on a connected physical TV, force-stop its apps, migrate its data, alter Amazon
   component states, or switch preferred Home unless the user explicitly requests that operation.
   An attached device is not permission to modify it. Always select an explicit adb serial.
 - Amazon HomeActivity_vNext and Fire Home Starter are already disabled in the user's setup.
-  Preserve their states. Migration only selects the custom preferred Home after the user verifies
-  it; rollback selects the still-installed original. Partner app buttons are separate.
-- Use a feature branch and PR; do not push to main. A build or PR does not authorize publishing a
-  release or changing the TV. User-authorized remote operations still follow session approvals.
+  Preserve their states. The custom launcher is already Home. Partner app buttons are separate.
+- This is the user's personal repository; PRs and feature branches are optional. Work directly
+  when appropriate, while respecting any actual GitHub branch protection. A build or code change
+  does not authorize publishing a release or changing the TV. User-authorized remote operations
+  still follow session approvals.
 - Validate infrastructure changes with `python3 -m unittest discover -s tools/tests -v`, build the
   APK, and run `git diff --check`. For Home changes, exercise remote focus, Back/Home, persistence,
   and update retention on an emulator or explicitly authorized device. Report untested Fire OS

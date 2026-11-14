@@ -1,7 +1,7 @@
 # Your custom Refract: build, migrate once, update forever
 
 Permanent application ID: `com.arinaggarwal.refract`. TV label: **Refract Custom**.
-Original installation: `com.hydrainnit.refract`. The two apps coexist. Do not change the custom
+Original installation: `com.hydrainnit.refract`. It was backed up and later uninstalled on the user's Cube. Do not change the custom
 package ID or signing certificate after installing it. This fork retains minSdk 24, targetSdk 34,
 plain Java/Dex with no native libraries, and v1/v2 signing. The Cube 3rd gen on Fire OS 7 uses
 Android 9/API 28; a compile SDK of 35 does not raise the minimum OS requirement.
@@ -92,6 +92,11 @@ Local/CI builds serialize independently and use the same remote reservation mech
 
 ## One-time migration on your rooted Cube
 
+**Already completed on this Cube:** the custom app is Home, and the original was uninstalled at the
+user's request after backup. Do not repeat these steps for updates. The rollback command below only
+works if the original has first been reinstalled; restoring its data needs a separate recovery. See
+[Updating your launcher](updating-your-launcher.md) for the current update process.
+
 Your supplied reference says these Amazon components are already disabled:
 `com.amazon.tv.launcher/.ui.HomeActivity_vNext` and
 `com.amazon.firehomestarter/.HomeStarterActivity`. **Leave those states alone.** The helper does not
@@ -160,7 +165,7 @@ allow ADB shell's `su` request. Do not use `adb backup`: the app disables Androi
    Root/firmware policies can differ; if it fails, leave the original installed and use rollback.
    The Hulu/partner button follows a separate mechanism and is unaffected.
 
-Immediate rollback to the still-installed original, with its original settings:
+If the original is still installed, switch Home back to it with:
 
 ```sh
 python3 tools/tv.py --serial TV_IP:5555 rollback-home
@@ -169,8 +174,8 @@ adb -s TV_IP:5555 shell "su -c 'pm set-home-activity com.hydrainnit.refract/.Mai
 adb -s TV_IP:5555 shell am start -n com.hydrainnit.refract/.MainActivity
 ```
 
-No app needs to be uninstalled, disabled, or restored from backup for that rollback. Keep the
-original for as long as you want. The backup is a recovery artifact; there is intentionally no
+When the original is still installed with its data, this switch needs no uninstall or restore.
+On the user's Cube, the original was removed and needs reinstalling and data recovery first. The backup is a recovery artifact; there is intentionally no
 automated destructive restore over your working original.
 
 ## Verification
