@@ -3,6 +3,15 @@
 Your custom launcher is already installed on the Fire TV Cube as
 `com.arinaggarwal.refract`. Future updates install over that same app and keep its settings,
 profiles, app layout, and folders. You do not need to repeat the migration or uninstall the app.
+Saved API keys and other app preferences also remain in place: Android retains the app's private
+data and its Android Keystore key when the signed update is installed over the existing app.
+Future changes must preserve these storage names or safely migrate their contents.
+
+This applies to an in-place update on the same device. Uninstalling the launcher, clearing its
+data, resetting the device or losing its Android Keystore can remove settings or make encrypted API
+keys unreadable; reinstalling the APK or restoring preference files alone cannot restore that
+Keystore key. Keep your API keys separately in a secure password manager so you can re-enter them
+if you ever need to recover or move to another device.
 
 ## The easy way: ask Codex
 

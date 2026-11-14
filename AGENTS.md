@@ -3,6 +3,9 @@
 - Permanent application ID: `com.arinaggarwal.refract`. Source lives in
   `src/com/arinaggarwal/refract`. Keep the package, signing identity, and profile/preference storage
   names stable so updates preserve settings and layouts.
+- Preserve all existing user data across in-place updates, including API keys, their `secrets`
+  preferences and the `refract_api_keys` Android Keystore alias. If a future change requires a
+  storage format or name change, migrate existing data safely and test update retention first.
 - Read `docs/custom-updates.md` before changing build, signing, migration, or TV deployment behavior.
   Follow `CONTRIBUTING.md` for native UI and performance conventions.
 - Build with `./build.sh`. It signs with the permanent private key outside Git, checks
