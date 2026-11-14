@@ -82,6 +82,7 @@ public class MainActivity extends Activity {
     static final String PREF_ORDER = "order";
     static final String PREF_HIDDEN = "hidden";
     static final String TV_SETTINGS = "com.android.tv.settings";
+    String settingsPackage = TV_SETTINGS;
 
     /** Packages placed first (in this order) until the user rearranges the grid. */
     static final List<String> DEFAULT_ORDER = Arrays.asList(
@@ -1127,7 +1128,7 @@ public class MainActivity extends Activity {
         Bitmap b = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
         Canvas c = new Canvas(b);
         Paint p = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.DITHER_FLAG);
-        boolean settings = TV_SETTINGS.equals(e.pkg);
+        boolean settings = isSettings(e);
         int top, bottom;
         if (settings) {                                  // tvOS Settings: silver
             top = 0xFFE9E9EE;
@@ -2172,7 +2173,8 @@ public class MainActivity extends Activity {
         heroOverview.setText(it.overview);
         Suggestions.Provider p = it.provider(this);
         heroBtnText.setText(p != null && !Suggestions.installed(this, p.pkg) ? "Get" : "\u25B6  Open");
-        int icon = p == null ? 0 : getResources().getIdentifier("provider_" + p.jwShort, "drawable", getPackageName());
+        Suggestions.Provider service = it.provider();  // Attribution stays with the service, even with a player override.
+        int icon = service == null ? 0 : getResources().getIdentifier("provider_" + service.jwShort, "drawable", getPackageName());
         heroProvider.setImageResource(icon);
         heroProvider.setVisibility(icon == 0 ? View.GONE : View.VISIBLE);
         heroBtnIcon.setVisibility(View.GONE);
@@ -3166,12 +3168,12 @@ public class MainActivity extends Activity {
         Set<String> pkgs = new HashSet<>();
         addResolved(pm, Intent.CATEGORY_LEANBACK_LAUNCHER, pkgs, true);
         addResolved(pm, Intent.CATEGORY_LAUNCHER, pkgs, false);
-        if (!pkgs.contains(TV_SETTINGS)) addSettingsEntry(pm);
+        addSettingsEntry(pm);
         if (com.arinaggarwal.refract.present.Presenter.enabled(this)) addPresentEntry();
         inputs = Inputs.list(this);
         if (Inputs.showCard(this) && !inputs.isEmpty()) addInputsEntry();
         for (AppEntry e : all.values()) {
-            if (e.banner == null || TVOS_CARD_PKGS.contains(e.pkg)) {
+            if (e.banner == null || isSettings(e) || TVOS_CARD_PKGS.contains(e.pkg)) {
                 e.banner = new BitmapDrawable(getResources(), tvosCard(e));
             }
         }
@@ -3207,14 +3209,23 @@ public class MainActivity extends Activity {
         }
     }
 
-    /** Fallback Settings tile for TVs whose settings app has no launcher entry. */
+    /** Use the device's actual Settings app, including OEM apps without a launcher entry. */
     void addSettingsEntry(PackageManager pm) {
+        Intent launch = new Intent(Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        ResolveInfo resolved = pm.resolveActivity(launch, PackageManager.MATCH_DEFAULT_ONLY);
+        settingsPackage = resolved != null && resolved.activityInfo != null
+                ? resolved.activityInfo.packageName : TV_SETTINGS;
+        if (resolved != null && resolved.activityInfo != null) {
+            launch.setComponent(new ComponentName(settingsPackage, resolved.activityInfo.name));
+        }
+        // Keep existing component keys so saved positions and hidden choices survive updates.
+        for (AppEntry entry : all.values()) if (settingsPackage.equals(entry.pkg)) return;
         AppEntry s = new AppEntry();
         s.key = SETTINGS_KEY;
-        s.pkg = TV_SETTINGS;
+        s.pkg = settingsPackage;
         s.label = "Settings";
         s.system = true;
-        s.launch = new Intent(Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        s.launch = launch;
         try {
             s.banner = pm.getApplicationBanner(s.pkg);
             s.icon = pm.getApplicationIcon(s.pkg);
@@ -3234,7 +3245,7 @@ public class MainActivity extends Activity {
     }
 
     boolean isSettings(AppEntry e) {
-        return SETTINGS_KEY.equals(e.key) || TV_SETTINGS.equals(e.pkg) || PRESENT_KEY.equals(e.key);
+        return SETTINGS_KEY.equals(e.key) || settingsPackage.equals(e.pkg) || TV_SETTINGS.equals(e.pkg);
     }
 
     List<Inputs.Input> inputs = new ArrayList<>();
@@ -3349,9 +3360,14 @@ public class MainActivity extends Activity {
 
     void setHidden(AppEntry a, boolean hide) {
         Set<String> hidden = new HashSet<>(prefs.getStringSet(PREF_HIDDEN, Collections.emptySet()));
-        if (hide) hidden.add(a.key);
+        if (hide) {
+            hidden.add(a.key);
+            folders.removeApp(a.key);
+        }
         else hidden.remove(a.key);
-        prefs.edit().putStringSet(PREF_HIDDEN, hidden).apply();
+        SharedPreferences.Editor edit = prefs.edit().putStringSet(PREF_HIDDEN, hidden);
+        folders.save(edit);
+        edit.apply();
         int i = focusedIndex;
         loadApps();
         if (folderMode && folderContents().isEmpty()) {
@@ -3465,10 +3481,10 @@ public class MainActivity extends Activity {
         } else {
             labels.add("Move");
             actions.add(() -> startMove(index));
-            if (!isSettings(a)) {
-                labels.add("Hide");
-                actions.add(() -> setHidden(a, true));
-            }
+        }
+        if (!folderMode || !FOLDER_KEY.equals(openFolderKey)) {
+            labels.add("Move to More Apps");
+            actions.add(() -> setHidden(a, true));
         }
         if (!isSettings(a) && !INPUTS_KEY.equals(a.key) && !PRESENT_KEY.equals(a.key)) {
             labels.add("Move to Folder");

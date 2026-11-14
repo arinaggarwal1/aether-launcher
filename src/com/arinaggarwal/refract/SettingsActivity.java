@@ -321,6 +321,10 @@ public class SettingsActivity extends Activity {
         if (Suggestions.showRecs(this)) {
             section("Recommendations");
             row("Source", () -> Suggestions.sourceName(Suggestions.source(this)), this::chooseSource);
+            if (Suggestions.source(this).equals(Suggestions.SRC_TMDB)) {
+                row("Open in", () -> Suggestions.OPEN_NAMES[java.util.Arrays.asList(Suggestions.OPEN_KEYS)
+                        .indexOf(Suggestions.tmdbOpenIn(this))], this::chooseTmdbOpenIn);
+            }
             row("Content", () -> {
                 String t = Suggestions.types(this);
                 return t.equals("movie") ? "Movies" : t.equals("tv") ? "TV Series" : "Movies & Series";
@@ -1403,6 +1407,16 @@ public class SettingsActivity extends Activity {
         t.setLineSpacing(0, 1.15f);
         t.setPadding(Ui.px(this, 14), Ui.px(this, 4), Ui.px(this, 14), Ui.px(this, 10));
         list.addView(t);
+    }
+
+    void chooseTmdbOpenIn() {
+        int selected = java.util.Arrays.asList(Suggestions.OPEN_KEYS).indexOf(Suggestions.tmdbOpenIn(this));
+        dialog("Open in").setSingleChoiceItems(Suggestions.OPEN_NAMES, selected, (d, w) -> {
+            Suggestions.prefs(this).edit().putString(Suggestions.K_TMDB_OPEN_IN, Suggestions.OPEN_KEYS[w]).apply();
+            Suggestions.changed(this);
+            refreshAll();
+            d.dismiss();
+        }).show();
     }
 
     void chooseSource() {

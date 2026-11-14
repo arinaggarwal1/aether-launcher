@@ -53,7 +53,11 @@ screen. The initial updater version must first be installed using ADB.
   folder to move, rename, or remove it; removing returns its apps to Home. Inside a folder,
   **Show on Home Screen** moves an app out. The last app leaving removes the empty folder.
   Folders are saved per profile and work with the existing Back/Home navigation.
-- **More Apps**: hidden apps live in a folder card at the end of the grid.
+- **More Apps**: hold OK on any app and choose **Move to More Apps** to hide it from Home,
+  including Settings, Inputs and Presentation. Hidden apps stay available in the More Apps folder;
+  **Show on Home Screen** brings them back. Each profile keeps its own choices.
+- **Device Settings** appears on Home by default and opens the TV's own Settings app. It can be
+  moved or hidden like other apps; Refract Settings remains available in the status row.
 - **System apps** (Settings, Play Store…) get tvOS-style cards: a gradient with a white glyph.
 - **Background**: Aurora, Midnight, Sunset, Ocean or Graphite (per profile).
 
@@ -62,7 +66,7 @@ screen. The initial updater version must first be installed using ADB.
 | Where | Key | Action |
 |---|---|---|
 | Any card | OK | Open (zoom animation) |
-| Any card | Hold OK / Menu | Options: Open, Move, Hide, Move to Folder, App Info, Uninstall, Reset Layout |
+| Any card | Hold OK / Menu | Options: Open, Move, Move to More Apps, Move to Folder, App Info, Uninstall, Reset Layout |
 | Move mode | Arrows / OK | Move the wiggling card / finish |
 | Dock | Up | Carousel |
 | Carousel | Left / Right | Previous / next item (wraps around) |
@@ -148,6 +152,10 @@ Full-screen artwork behind the dock while a dock app is focused. One carousel ho
   unofficial API) or **TMDB** (free key). Each refresh picks at random from each service's top 20,
   so the set changes through the day (every 2 hours, or Refresh). **▶ Open** goes to the title's
   page in the app.
+- With **TMDB** selected, **Open in** offers **Open in respective streaming app**, **Open in Stremio**,
+  or **Open in Nuvio**. The choice is saved independently of the recommendation source. Player
+  choices keep the streaming service icon on the carousel and open the movie or series detail page using its IMDb ID; a missing ID or failed lookup
+  shows a message. The selected app's store page is offered when it is not installed.
 - **Stremio** as the source instead: Cinemeta's popular movies and series (no key). **▶ Open**
   goes to the title's page in **Stremio**, or in **[Nuvio](https://github.com/NuvioMedia/NuvioTV)**
   when only Nuvio is installed; **Get** opens Stremio on the Play Store. Settings → Top Shelf →

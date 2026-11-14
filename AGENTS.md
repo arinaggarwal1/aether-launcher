@@ -8,7 +8,8 @@
   storage format or name change, migrate existing data safely and test update retention first.
 - Read `docs/custom-updates.md` before changing build, signing, migration, or TV deployment behavior.
   Follow `CONTRIBUTING.md` for native UI and performance conventions.
-- Build with `./build.sh`. It signs with the permanent private key outside Git, checks
+- Only create a signed APK when the user explicitly requests a new build. Do not build one
+  automatically after code changes; use source checks until the user is ready. Build with `./build.sh`. It signs with the permanent private key outside Git, checks
   `config/signing-cert.sha256`, and reserves an increasing versionCode in GitHub. It requires network
   access and authenticated `gh` repository write access. Do not replace it with debug signing or
   manually reset/override version codes. Never delete the `refract-build/*` reservation tags.
@@ -30,6 +31,6 @@
   does not authorize publishing a release or changing the TV. User-authorized remote operations
   still follow session approvals.
 - Validate infrastructure changes with `python3 -m unittest discover -s tools/tests -v`, build the
-  APK, and run `git diff --check`. For Home changes, exercise remote focus, Back/Home, persistence,
+  APK when the user requests a build, and run `git diff --check`. For Home changes, exercise remote focus, Back/Home, persistence,
   and update retention on an emulator or explicitly authorized device. Report untested Fire OS
   behavior and hardware performance honestly.

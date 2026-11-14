@@ -40,7 +40,7 @@ final class Suggestions {
     static final String PREFS = "suggestions";
     static final String K_ENABLED = "enabled", K_TOKEN = "tmdb_token", K_TYPES = "types",
             K_PROVIDERS = "providers", K_LANGS = "languages", K_ADVANCE = "advance_sec", K_VERSION = "version",
-            K_SOURCE = "source", K_SHELF = "shelf";
+            K_SOURCE = "source", K_SHELF = "shelf", K_TMDB_OPEN_IN = "tmdb_open_in";
     /** What the top shelf shows: recommendations, news, both (alternating) or nothing. */
     static final String SHELF_RECS = "recs", SHELF_NEWS = "news", SHELF_BOTH = "both", SHELF_NONE = "none";
     /**
@@ -48,6 +48,9 @@ final class Suggestions {
      * is Cinemeta's public top lists, opened in the Stremio or Nuvio app.
      */
     static final String SRC_JUSTWATCH = "justwatch", SRC_TMDB = "tmdb", SRC_STREMIO = "stremio";
+    static final String OPEN_SERVICE = "service", OPEN_STREMIO = "stremio", OPEN_NUVIO = "nuvio";
+    static final String[] OPEN_NAMES = {"Open in respective streaming app", "Open in Stremio", "Open in Nuvio"};
+    static final String[] OPEN_KEYS = {OPEN_SERVICE, OPEN_STREMIO, OPEN_NUVIO};
     static final long MAX_AGE_MS = 2L * 60 * 60 * 1000;  // recommendations rotate every 2 hours
     /** POOL titles are fetched per service; PER_SOURCE of them are picked at random each refresh. */
     static final int PER_SOURCE = 3, POOL = 20, MAX_ITEMS = 10;
@@ -94,6 +97,8 @@ final class Suggestions {
         int runtime;
         /** Exact title page on the service (JustWatch), opened directly in the app when it supports it. */
         String link = "";
+        /** TMDB external id, resolved on demand without blocking remote navigation. */
+        volatile String imdb = "";
         /** Continue Watching entries: the app that played it, its store key, and progress. */
         String pkg = "", key = "";
         float progress = -1f;
@@ -136,9 +141,11 @@ final class Suggestions {
             return null;
         }
 
-        /** The app that opens this title: its service, or for Stremio titles whichever player is installed. */
+        /** Launch target, independent of the streaming service used for attribution. */
         Provider provider(Context c) {
-            return providerId == STREMIO_ID ? stremioApp(c) : provider();
+            if (providerId == STREMIO_ID) return stremioApp(c);
+            Provider player = tmdbPlayer(c);
+            return provider() != null && source(c).equals(SRC_TMDB) && player != null ? player : provider();
         }
     }
 
@@ -188,6 +195,17 @@ final class Suggestions {
     /** Stremio when installed (or neither is), else Nuvio. */
     static Provider stremioApp(Context c) {
         return !installed(c, STREMIO.pkg) && installed(c, NUVIO.pkg) ? NUVIO : STREMIO;
+    }
+
+    /** Keep existing service routing until the user explicitly chooses a player. */
+    static String tmdbOpenIn(Context c) {
+        String value = prefs(c).getString(K_TMDB_OPEN_IN, OPEN_SERVICE);
+        return OPEN_STREMIO.equals(value) || OPEN_NUVIO.equals(value) ? value : OPEN_SERVICE;
+    }
+
+    static Provider tmdbPlayer(Context c) {
+        String value = tmdbOpenIn(c);
+        return value.equals(OPEN_NUVIO) ? NUVIO : value.equals(OPEN_STREMIO) ? STREMIO : null;
     }
 
     static String sourceName(String s) {
@@ -706,6 +724,10 @@ final class Suggestions {
             openStremio(c, it, p);
             return;
         }
+        if (p.id == STREMIO_ID || p.id == NUVIO_ID) {
+            openTmdbPlayer(c, it, p);
+            return;
+        }
         String q = it.title;
         List<Intent> tries = new ArrayList<>();
         if (it.link != null && !it.link.isEmpty()) tries.add(view(it.link, p.pkg));
@@ -733,6 +755,43 @@ final class Suggestions {
         Intent launch = pm.getLeanbackLaunchIntentForPackage(p.pkg);
         if (launch == null) launch = pm.getLaunchIntentForPackage(p.pkg);
         if (launch != null) start(c, launch);
+    }
+
+    // Accessed on the main thread: repeated OK presses must not queue multiple launches.
+    private static boolean resolvingPlayer;
+
+    /** Resolve the exact IMDb title before handing TMDB recommendations to a chosen player. */
+    static void openTmdbPlayer(Context c, Item it, Provider player) {
+        if (resolvingPlayer) return;
+        resolvingPlayer = true;
+        android.widget.Toast.makeText(c, "Opening in " + player.name + "\u2026",
+                android.widget.Toast.LENGTH_SHORT).show();
+        new Thread(() -> {
+            String error = null;
+            try {
+                if (it.imdb.isEmpty()) {
+                    String id = get(c, "/" + it.type + "/" + it.id + "/external_ids").optString("imdb_id", "");
+                    if (id.matches("tt[0-9]+")) it.imdb = id;
+                }
+                if (it.imdb.isEmpty()) error = "This title has no IMDb ID to open in " + player.name + ".";
+            } catch (Exception e) {
+                error = TmdbException.describe(e);
+            }
+            final String message = error;
+            new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
+                resolvingPlayer = false;
+                // Don't pull the user back into a player after they leave Home during the lookup.
+                if (c instanceof android.app.Activity && !((android.app.Activity) c).hasWindowFocus()) return;
+                if (message != null) {
+                    android.widget.Toast.makeText(c, message, android.widget.Toast.LENGTH_LONG).show();
+                    return;
+                }
+                Item title = new Item();
+                title.type = it.type;
+                title.link = it.imdb;
+                openStremio(c, title, player);
+            });
+        }, "refract-title-link").start();
     }
 
     /**

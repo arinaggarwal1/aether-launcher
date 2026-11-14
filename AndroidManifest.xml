@@ -21,6 +21,10 @@
     <uses-permission android:name="com.android.providers.tv.permission.READ_EPG_DATA" />
 
     <queries>
+        <!-- Resolve the OEM's default Settings app, even without a launcher activity. -->
+        <intent>
+            <action android:name="android.settings.SETTINGS" />
+        </intent>
         <intent>
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
