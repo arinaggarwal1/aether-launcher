@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.hydrainnit.refract">
+    package="com.arinaggarwal.refract">
 
     <uses-feature android:name="android.software.leanback" android:required="false" />
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
@@ -43,7 +43,7 @@
     </queries>
 
     <application
-        android:label="Refract Launcher"
+        android:label="Refract Custom"
         android:icon="@drawable/ic_launcher"
         android:banner="@drawable/banner"
         android:theme="@style/HomeTheme"

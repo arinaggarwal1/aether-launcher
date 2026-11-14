@@ -3,8 +3,7 @@
 ## Build
 
 No Gradle and no runtime libraries. `build.sh` runs `aapt2` (resources + assets) → `javac
---release 11` against `android.jar` (API 34) → `d8` (min API 24) → `zipalign` → `apksigner` (local debug key, or the private release key via
-`RELEASE_KEYSTORE`).
+--release 11` against `android.jar` (API 35) → `d8` (min API 24) → `zipalign` → `apksigner` (permanent custom key, verified against the public certificate pin).
 Fonts (Inter, OFL) and the Presentation web app are plain assets; the QR encoder is vendored
 source (Nayuki, MIT) under `src/io/nayuki/qrcodegen`.
 
@@ -12,6 +11,9 @@ source (Nayuki, MIT) under `src/io/nayuki/qrcodegen`.
 
 | Path | Responsibility |
 |---|---|
+| `Folders.java` | Profile-local named folders, membership normalization and persistence |
+| `tools/release.py` | Permanent signing, remote version reservations, verified local/CI builds |
+| `tools/tv.py` | Explicit backup, migration, guarded updates and preferred Home switching |
 | `MainActivity.java` | Home screen: grid/dock, focus & move, launch zoom, carousel (Continue Watching + news + recommendations), status row, Liquid Glass, Control Center (incl. Memory/Clean), profile switcher, idle mode, menus |
 | `SetupActivity.java` | First-time setup pages (Apple-style, one question per page) |
 | `SettingsActivity.java` | All settings, tvOS list layout |
@@ -79,12 +81,12 @@ source (Nayuki, MIT) under `src/io/nayuki/qrcodegen`.
   caused ~1 s freezes moving to/from the dock).
 - Legibility gradients are baked into the wallpaper and artwork; the window background is removed
   to avoid hidden full-screen fills.
-- Measure with `adb shell dumpsys gfxinfo com.hydrainnit.refract` — dock navigation runs at a 16 ms
+- Measure with `adb shell dumpsys gfxinfo com.arinaggarwal.refract` — dock navigation runs at a 16 ms
   median; full-screen transitions are limited by the GPU's fill rate (~30 fps on this box).
 
 ## Refract additions
 
-Package and application ID: `com.hydrainnit.refract` (renamed from `com.petrobot.hume`; a new
+Package and application ID: `com.arinaggarwal.refract` (renamed from `com.petrobot.hume`; a new
 install, so settings from Hume are not carried over).
 
 | File | Role |

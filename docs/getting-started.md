@@ -8,8 +8,8 @@ Android Studio or Gradle needed: the project builds with the plain Android SDK c
 | | Version | Why |
 |---|---|---|
 | JDK | 17 or newer | `javac` compiles the Java sources (`--release 11`) |
-| Android SDK build-tools | **34.0.0** | `aapt2`, `d8`, `zipalign`, `apksigner` |
-| Android SDK platform | **android-34** | `android.jar` to compile against |
+| Android SDK build-tools | **36.0.0** | `aapt2`, `d8`, `zipalign`, `apksigner` |
+| Android SDK platform | **android-35** | `android.jar` to compile against |
 | Android SDK platform-tools | latest | `adb` to install and debug |
 | A device | Android TV 7.0+ (API 24+) | A TV box/TV, or the Android TV emulator |
 
@@ -25,7 +25,7 @@ brew install --cask temurin@17                      # JDK 17 (or any JDK 17+)
 brew install --cask android-commandlinetools        # sdkmanager
 export ANDROID_HOME="$HOME/Library/Android/sdk"
 yes | sdkmanager --sdk_root="$ANDROID_HOME" --licenses
-sdkmanager --sdk_root="$ANDROID_HOME" "platform-tools" "build-tools;34.0.0" "platforms;android-34"
+sdkmanager --sdk_root="$ANDROID_HOME" "platform-tools" "build-tools;36.0.0" "platforms;android-35"
 ```
 
 ### Linux (Debian/Ubuntu)
@@ -38,7 +38,7 @@ unzip commandlinetools-linux-*.zip && mv cmdline-tools latest
 export ANDROID_HOME="$HOME/Android/Sdk"
 export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"
 yes | sdkmanager --licenses
-sdkmanager "platform-tools" "build-tools;34.0.0" "platforms;android-34"
+sdkmanager "platform-tools" "build-tools;36.0.0" "platforms;android-35"
 ```
 
 ### Windows
@@ -52,16 +52,16 @@ Put `ANDROID_HOME` (and `JAVA_HOME` if `javac` isn't on your `PATH`) in your she
 ## 3. Get the code and build
 
 ```sh
-git clone http://10.0.0.220/marketing/hume-launcher.git    # or your fork
-cd hume-launcher
-./build.sh                                                 # → build/refract-launcher.apk
-VERSION_CODE=88 VERSION_NAME=7.5 ./build.sh                 # release builds set a version
+git clone https://github.com/arinaggarwal1/refract-launcher.git
+cd refract-launcher
+./build.sh                                                 # → build/refract-custom.apk
+./build.sh --name 1.0.0-custom.1                          # optional display version
 ```
 
-What `build.sh` does, in order: `aapt2` compiles resources and assets → `javac` compiles `src/` →
-`d8` converts to DEX → `zipalign` → `apksigner` signs with a local debug key (`debug.keystore`,
-created on first build, never committed). A full build takes
-about 15 seconds. If a tool is missing it says which one and how to get it.
+`build.sh` compiles Java/resources with the Android SDK and signs with your permanent private
+key. It reserves a unique increasing versionCode in GitHub. Restore your existing signing key
+on a new machine; never create another one. See **[Custom updates](custom-updates.md)** for the
+required one-time signing/GitHub setup and Fire TV migration. Ordinary builds never install apps.
 
 ## 4. Run it on a TV
 
@@ -71,8 +71,8 @@ about 15 seconds. If a tool is missing it says which one and how to get it.
 
 ```sh
 adb connect <tv-ip>:5555          # accept the "Allow debugging?" prompt on the TV
-adb install -r build/refract-launcher.apk
-adb shell am start -n com.hydrainnit.refract/.MainActivity
+adb install -r build/refract-custom.apk
+adb shell am start -n com.arinaggarwal.refract/.MainActivity
 ```
 
 3. First launch runs the setup pages. To make Refract the home screen, finish setup (it offers this),
@@ -88,7 +88,7 @@ sdkmanager --list | grep "android-tv"          # pick an Android TV image for yo
 sdkmanager "emulator" "system-images;android-<api>;android-tv;<abi>"
 avdmanager create avd -n tv -k "system-images;android-<api>;android-tv;<abi>" -d tv_1080p
 emulator -avd tv &
-adb install -r build/refract-launcher.apk
+adb install -r build/refract-custom.apk
 ```
 
 The emulator is fine for layout and logic. It does **not** show real performance (its GPU is far
@@ -97,7 +97,7 @@ faster than a TV box's), and it has no HDMI inputs, so check those on hardware.
 ## 6. Your first change
 
 1. Pick a small thing, e.g. a label in `SettingsActivity.java`.
-2. Build and install: `./build.sh && adb install -r build/refract-launcher.apk`.
+2. Build and install: `./build.sh && adb install -r build/refract-custom.apk`.
 3. Jump straight to the screen you changed with the developer shortcuts below, and take a
    screenshot: `adb exec-out screencap -p > shot.png`.
 4. Read **[CONTRIBUTING.md](../CONTRIBUTING.md)** before opening a pull request.
@@ -108,25 +108,25 @@ Open any screen without clicking through the UI:
 
 | Command | Opens |
 |---|---|
-| `adb shell am start -n com.hydrainnit.refract/.MainActivity --es panel cc` | Control Center (`inputs`, `weather`, `present` also work) |
-| `adb shell am start -n com.hydrainnit.refract/.MainActivity --es panel search --es q panchayat` | Search, with a query typed in |
-| `adb shell am start -n com.hydrainnit.refract/.MainActivity --ez pick_profile true` | Profile switcher |
-| `adb shell am start -n com.hydrainnit.refract/.SettingsActivity --es page "Top Shelf"` | A Settings page by its title |
-| `adb shell am start -n com.hydrainnit.refract/.SetupActivity --ei step 3` | Setup page 0–7 |
-| `adb shell am start -n com.hydrainnit.refract/.SetupActivity --ez skip true` | Marks setup as done |
-| `adb shell am start -n com.hydrainnit.refract/.SettingsActivity --es tmdb_token <key>` | Sets a TMDB key |
-| `adb shell am start -n com.hydrainnit.refract/.MainActivity --es perf weather` | Hides one layer to measure its GPU cost (`status`, `hero`, `dockglass`, `shadows`; `reset` restores) |
+| `adb shell am start -n com.arinaggarwal.refract/.MainActivity --es panel cc` | Control Center (`inputs`, `weather`, `present` also work) |
+| `adb shell am start -n com.arinaggarwal.refract/.MainActivity --es panel search --es q panchayat` | Search, with a query typed in |
+| `adb shell am start -n com.arinaggarwal.refract/.MainActivity --ez pick_profile true` | Profile switcher |
+| `adb shell am start -n com.arinaggarwal.refract/.SettingsActivity --es page "Top Shelf"` | A Settings page by its title |
+| `adb shell am start -n com.arinaggarwal.refract/.SetupActivity --ei step 3` | Setup page 0–7 |
+| `adb shell am start -n com.arinaggarwal.refract/.SetupActivity --ez skip true` | Marks setup as done |
+| `adb shell am start -n com.arinaggarwal.refract/.SettingsActivity --es tmdb_token <key>` | Sets a TMDB key |
+| `adb shell am start -n com.arinaggarwal.refract/.MainActivity --es perf weather` | Hides one layer to measure its GPU cost (`status`, `hero`, `dockglass`, `shadows`; `reset` restores) |
 
 Useful logs: `adb logcat -s TvHome` (Refract's own messages) and
-`adb shell dumpsys gfxinfo com.hydrainnit.refract` (frame times; see CONTRIBUTING.md).
+`adb shell dumpsys gfxinfo com.arinaggarwal.refract` (frame times; see CONTRIBUTING.md).
 
 ## Troubleshooting
 
 | Problem | Fix |
 |---|---|
-| `Missing …/aapt2` | Install `build-tools;34.0.0` and `platforms;android-34`, or set `ANDROID_HOME` |
+| `Missing …/aapt2` | Install `build-tools;36.0.0` and `platforms;android-35`, or set `ANDROID_HOME` |
 | `javac not found` | Install JDK 17+ or set `JAVA_HOME` |
-| `INSTALL_FAILED_UPDATE_INCOMPATIBLE` | The installed copy was signed with a different key (e.g. a release build): `adb uninstall com.hydrainnit.refract` first (this clears its settings) |
+| `INSTALL_FAILED_UPDATE_INCOMPATIBLE` | The installed copy was signed with a different key (e.g. a release build): restore the permanent signing key and rebuild; do not uninstall or clear settings |
 | `adb: device offline` / `unauthorized` | Accept the prompt on the TV; `adb disconnect` then `adb connect` again |
 | Home button still opens the old launcher | Finish setup's *Make Refract the Home Screen*, or see install.md |
 | Install over Wi-Fi is very slow | Normal for 1 MB+ over a busy network; it finishes — don't wrap it in fixed sleeps |

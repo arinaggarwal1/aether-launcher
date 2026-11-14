@@ -1,4 +1,9 @@
-# Refract Launcher
+# Refract Custom Launcher
+
+Your personal fork. **[Build, update, and safely migrate your Fire TV](docs/custom-updates.md)**.
+
+Run `./build.sh` for a permanently signed `build/refract-custom.apk`. Publish a GitHub release
+to build a downloadable APK with the same identity. The original Refract remains installed.
 
 ![Refract Launcher](docs/images/refract-banner.png)
 
@@ -9,7 +14,7 @@ Apple TV: glass dock, full-screen carousel, Control Center and profiles. It is b
 on low-end TV boxes like the Xiaomi Mi Box. Plain Java, no Gradle, no third-party runtime
 libraries. The APK is about 1.3 MB: background photos download to the TV at 1080p or 4K, with gradients when offline.
 
-Application ID: `com.hydrainnit.refract`.
+Application ID: `com.arinaggarwal.refract`.
 
 ![Home screen with the weather pill, Now Playing and the status pill](docs/images/refract-home.jpg)
 
@@ -36,7 +41,7 @@ their studios and are fetched at runtime, not shipped in the app.
 - **Appearance**: Light (frosted white glass, dark text) or Dark (smoked glass), chosen in setup
   with live previews and followed by every screen.
 - **Home**: Liquid Glass dock, 6-across app grid in Apple's measured proportions, focus lift and
-  zoom-to-open, More Apps folder, 53 Pexels photographs in 9 categories shown behind the grid,
+  zoom-to-open, named Home folders, More Apps folder, 53 Pexels photographs in 9 categories shown behind the grid,
   downloaded to the TV at 1080p or 4K (gradients when offline).
 - **Movies**: a Movies tab (Trending, Popular, Top Rated, Coming Soon, genres) and an optional
   **Movies Home Theme** with full-screen TMDB backdrops, title logos, rating, release date and
@@ -73,11 +78,11 @@ Full list with screenshots: **[docs/features.md](docs/features.md)**.
 ## Quick start
 
 ```sh
-# needs JDK 17+ and Android SDK build-tools 34.0.0 + platform android-34 (see getting started)
-./build.sh                                   # → build/refract-launcher.apk
+# needs JDK 17+ and Android SDK build-tools 36.0.0 + platform android-35 (see getting started)
+./build.sh                                   # → build/refract-custom.apk
 adb connect <tv-ip>:5555
-adb install -r build/refract-launcher.apk
-adb shell am start -n com.hydrainnit.refract/.MainActivity
+adb install -r build/refract-custom.apk
+adb shell am start -n com.arinaggarwal.refract/.MainActivity
 ```
 
 ## Documentation
