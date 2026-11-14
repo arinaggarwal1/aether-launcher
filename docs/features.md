@@ -150,9 +150,9 @@ Full-screen artwork behind the dock while a dock app is focused. One carousel ho
   Source; with Stremio chosen, *Opens in* shows which app will be used.
 
   ![Stremio as the source](images/settings-stremio.jpg)
-- **News**: India, local (your city, from the weather location) and world, from Indian newsrooms'
-  RSS feeds with large images: Times of India, Hindustan Times, The Indian Express, India Today and
-  News18 by default (NDTV and The Hindu optional). An editorial layout made for reading: headline,
+- **News**: U.S. and world headlines from ABC News, CBS News, CNN, NBC News, NPR, Fox News and The New York Times by default.
+  Indian newsrooms and their supported local city feeds remain available in Newsrooms settings.
+  An editorial layout made for reading: headline,
   summary, section, newsroom and age; no button. Updates every 30 minutes (15/30/60).
 - Each profile chooses what it shows (Settings → Top Shelf / Continue Watching, or setup).
 

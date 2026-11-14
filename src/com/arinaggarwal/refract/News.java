@@ -18,8 +18,8 @@ import java.util.Locale;
 import java.util.Set;
 
 /**
- * News for the top shelf from Indian newsrooms' RSS feeds, which carry a large image per story
- * (free, no key): India, Local (the city from the internet address or the city chosen for
+ * News for the top shelf from newsrooms' RSS feeds, which carry a large image per story
+ * (free, no key): national, Local (the city from the internet address or the city chosen for
  * weather) and World stories mixed together. Each story becomes a carousel item \u2014 headline, summary, image,
  * section, source and age (no button: stories are read on the shelf).
  */
@@ -31,6 +31,7 @@ final class News {
     /** A newsroom and its feed for each section ({city} is the local city's slug; null = none). */
     static final class Source {
         final String id, name, india, world, local;
+        final boolean us;
 
         Source(String id, String name, String india, String world, String local) {
             this.id = id;
@@ -38,6 +39,8 @@ final class News {
             this.india = india;
             this.world = world;
             this.local = local;
+            this.us = id.equals("abc") || id.equals("cbs") || id.equals("nbc") || id.equals("npr")
+                    || id.equals("fox") || id.equals("cnn") || id.equals("nyt");
         }
     }
 
@@ -53,6 +56,13 @@ final class News {
                 {"jaipur", "3012544"}, {"patna", "-2128817995"}, {"noida", "8021716"}, {"gurugram", "6547154"},
                 {"nagpur", "442002"}, {"thiruvananthapuram", "878156304"}};
         for (String[] e : ids) TOI_CITIES.put(e[0], e[1]);
+        SOURCES.add(new Source("abc", "ABC News", "https://feeds.abcnews.com/abcnews/usheadlines", "https://feeds.abcnews.com/abcnews/internationalheadlines", null));
+        SOURCES.add(new Source("cnn", "CNN", "https://feeds.cnn.com/feed/faurecia/all.rss", null, null));
+        SOURCES.add(new Source("nyt", "The New York Times", "https://rss.nytimes.com/services/xml/rss/nyt/US.xml", "https://rss.nytimes.com/services/xml/rss/nyt/World.xml", null));
+        SOURCES.add(new Source("cbs", "CBS News", "https://www.cbsnews.com/latest/rss/us", "https://www.cbsnews.com/latest/rss/world", null));
+        SOURCES.add(new Source("nbc", "NBC News", "https://feeds.nbcnews.com/nbcnews/public/news", null, null));
+        SOURCES.add(new Source("npr", "NPR", "https://feeds.npr.org/1001/rss.xml", "https://feeds.npr.org/1004/rss.xml", null));
+        SOURCES.add(new Source("fox", "Fox News", "https://feeds.foxnews.com/foxnews/national", "https://feeds.foxnews.com/foxnews/world", null));
         SOURCES.add(new Source("toi", "Times of India",
                 "https://timesofindia.indiatimes.com/rssfeeds/-2128936835.cms",
                 "https://timesofindia.indiatimes.com/rssfeeds/296589292.cms",
@@ -117,8 +127,16 @@ final class News {
     }
 
     static Set<String> sources(Context c) {
-        Set<String> def = new HashSet<>(java.util.Arrays.asList("toi", "ht", "ie", "indiatoday", "news18"));
-        return new HashSet<>(Suggestions.prefs(c).getStringSet(K_SOURCES, def));
+        SharedPreferences p = Suggestions.prefs(c);
+        Set<String> us = new HashSet<>(java.util.Arrays.asList("abc", "cbs", "cnn", "nbc", "npr", "fox", "nyt"));
+        Set<String> oldDefault = new HashSet<>(java.util.Arrays.asList("toi", "ht", "ie", "indiatoday", "news18"));
+        Set<String> selected = new HashSet<>(p.getStringSet(K_SOURCES, us));
+        if (!p.getBoolean("news_us_sources_added", false)) {
+            if (selected.equals(oldDefault)) selected.clear();
+            selected.addAll(us);
+            p.edit().putStringSet(K_SOURCES, selected).putBoolean("news_us_sources_added", true).apply();
+        }
+        return selected;
     }
 
     static void setSources(Context c, Set<String> ids) {
@@ -126,7 +144,7 @@ final class News {
         p.edit().putStringSet(K_SOURCES, ids).apply();
     }
 
-    /** Latest stories: India, local and world mixed together, alternating between newsrooms. Blocking. */
+    /** Latest national, local and world stories, alternating between newsrooms. Blocking. */
     static List<Suggestions.Item> fetch(Context c, int max) {
         List<List<Suggestions.Item>> lists = new ArrayList<>();
         Set<String> chosen = sources(c);
@@ -143,7 +161,8 @@ final class News {
                     url = url.replace("{toi}", id);
                 }
                 url = url.replace("{ie}", slug(city, true)).replace("{ht}", slug(city, false));
-                String label = sec.equals(LOCAL) ? city : sec.equals(WORLD) ? "World" : "India";
+                String label = sec.equals(LOCAL) ? city : sec.equals(WORLD) ? "World"
+                        : s.id.equals("cnn") || s.id.equals("nbc") ? "Top stories" : s.us ? "U.S." : "India";
                 try {
                     long maxAge = (sec.equals(LOCAL) ? 7 : 2) * 86400000L;  // city news moves slower
                     List<Suggestions.Item> l = read(url, label + "  \u00b7  " + s.name, maxAge);
@@ -197,7 +216,8 @@ final class News {
                     } else if (cur != null && (tag.equals("media:content") || tag.equals("media:thumbnail") || tag.equals("enclosure"))) {
                         String u = x.getAttributeValue(null, "url");
                         String type = x.getAttributeValue(null, "type");
-                        if (u != null && (type == null || type.startsWith("image")) && cur.backdrop.isEmpty()) cur.backdrop = bigger(u);
+                        String medium = x.getAttributeValue(null, "medium");
+                        if (u != null && (type == null || type.startsWith("image")) && (medium == null || medium.equals("image")) && cur.backdrop.isEmpty()) cur.backdrop = bigger(u);
                     }
                 } else if (ev == XmlPullParser.TEXT && cur != null && tag != null) {
                     String t = x.getText();
@@ -205,6 +225,8 @@ final class News {
                         case "title": cur.title += t; break;
                         case "link": cur.link += t.trim(); break;
                         case "description": cur.overview += t; rawDesc += t; break;
+                        case "content:encoded": rawDesc += t; break;
+                        case "image": if (cur.backdrop.isEmpty()) cur.backdrop = bigger(t.trim()); break;
                         case "pubDate": cur.published = parseDate(t.trim()); break;
                         default: break;
                     }
@@ -213,7 +235,7 @@ final class News {
                         cur.title = clean(cur.title);
                         cur.overview = clean(cur.overview);
                         if (cur.backdrop.isEmpty()) {  // some feeds (India Today) put the image in the summary
-                            java.util.regex.Matcher m = java.util.regex.Pattern.compile("<img[^>]+src=\"([^\"]+)\"").matcher(rawDesc);
+                            java.util.regex.Matcher m = java.util.regex.Pattern.compile("<img[^>]+src=['\"]([^'\"]+)['\"]").matcher(rawDesc);
                             if (m.find()) cur.backdrop = bigger(m.group(1).replace("&amp;", "&"));
                         }
                         boolean fresh = cur.published == 0 || System.currentTimeMillis() - cur.published < maxAge;
@@ -234,7 +256,7 @@ final class News {
     private static String bigger(String u) {
         java.util.regex.Matcher toi = java.util.regex.Pattern.compile("toiimg\\.com/photo/msid-(\\d+)").matcher(u);
         if (toi.find()) return "https://static.toiimg.com/thumb/msid-" + toi.group(1) + ",width-1280,height-720,resizemode-4/photo.jpg";
-        return u.replaceAll("/LANDSCAPE_\\d+/", "/LANDSCAPE_1200/");
+        return u.replaceAll("/LANDSCAPE_\\d+/", "/LANDSCAPE_1200/").replace("/thumbnail/60x60/", "/thumbnail/1280x720/");
     }
 
     /** Strip tags and entities; keep one short paragraph. */

@@ -39,7 +39,7 @@ Key files (full map in **[docs/architecture.md](docs/architecture.md)**):
 | `MainActivity.java` | Home: dock/grid, focus, carousel, status row, Control Center, profiles UI, Liquid Glass, idle mode |
 | `SettingsActivity.java` | Settings pages |
 | `SetupActivity.java` | First-time setup pages |
-| `Suggestions.java`, `News.java` | Carousel content (JustWatch/TMDB/Stremio recommendations, Indian news RSS) |
+| `Suggestions.java`, `News.java` | Carousel content (JustWatch/TMDB/Stremio recommendations, U.S. and Indian news RSS) |
 | `Search.java`, `SearchPanel.java` | Search: titles on every service with Open / Get, apps and settings; the search screen |
 | `MediaWatchService.java` | Continue Watching from media sessions |
 | `Weather*.java` | Weather data, pill and forecast panel, icons |

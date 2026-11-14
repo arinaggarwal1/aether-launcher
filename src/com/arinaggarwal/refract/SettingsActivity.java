@@ -548,7 +548,7 @@ public class SettingsActivity extends Activity {
         row("Made by", () -> "Hydrainnit", () -> { });
         row("Based on", () -> "Hume Launcher by Petrobot", () -> show(ATTRIB));
         row("Weather", () -> Weather.sourceName(Weather.source(this)), () -> { });
-        row("News", () -> News.sources(this).size() + " Indian newsrooms", () -> { });
+        row("News", () -> News.sources(this).size() + " newsrooms", () -> { });
         nav(ATTRIB, () -> "Credits & licences");
     }
 
@@ -1332,7 +1332,7 @@ public class SettingsActivity extends Activity {
         credit("Open-Meteo", "Weather \u00b7 CC BY 4.0", "Weather data by Open-Meteo.com, licensed under CC BY 4.0.");
         credit("MET Norway", "Weather \u00b7 CC BY 4.0", "Weather data from the Norwegian Meteorological Institute (api.met.no), CC BY 4.0.");
         credit("wttr.in", "Weather", "Weather from wttr.in by Igor Chubin.");
-        credit("Indian newsrooms", News.sources(this).size() + " sources", "Headlines link to and belong to their publishers.");
+        credit("Newsrooms", News.sources(this).size() + " sources", "Headlines link to and belong to their publishers.");
         section("Brand");
         credit("Refract logo & banner", "Hydrainnit", "Original artwork for Refract Launcher (tools/brand.py).");
     }
