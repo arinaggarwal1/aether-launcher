@@ -27,6 +27,14 @@ public final class UpdaterInstrumentation extends Instrumentation {
     static final String META_URL = "https://github.com/arinaggarwal1/refract-launcher/releases/download/v1/release.json";
     static final Map<String, Response> responses = new HashMap<>();
 
+    /** Simulate Fire OS returning a PackageInfo without modern signingInfo. */
+    static final class SignatureCheck {
+        static void checkFallback(Context context, java.io.File apk) {
+            android.content.pm.Signature[] signers = Updates.archiveSigners(context.getPackageManager(), apk,
+                    new android.content.pm.PackageInfo());
+            check(signers != null && signers.length == 1, "legacy archive certificate fallback failed");
+        }
+    }
     static final class Response {
         int status;
         byte[] data;
@@ -104,6 +112,7 @@ public final class UpdaterInstrumentation extends Instrumentation {
             try (java.io.FileOutputStream out = new java.io.FileOutputStream(candidate)) { out.write(apk); }
             PackageInfo info = c.getPackageManager().getPackageArchiveInfo(candidate.getAbsolutePath(), 0);
             check(info != null, "candidate APK did not parse");
+            SignatureCheck.checkFallback(c, candidate);
             long version = android.os.Build.VERSION.SDK_INT >= 28 ? info.getLongVersionCode() : info.versionCode;
             check(version > Updates.installedVersion(c), "candidate is not newer than installed test APK");
             responses.put(Updates.LATEST, new Response(404, new byte[0]));

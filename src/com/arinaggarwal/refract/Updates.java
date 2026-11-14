@@ -140,6 +140,17 @@ final class Updates {
         return p.signatures;
     }
 
+    /** Fire OS 7 can omit signingInfo for an archive even when GET_SIGNING_CERTIFICATES is set. */
+    @SuppressWarnings("deprecation")
+    static Signature[] archiveSigners(PackageManager pm, File apk, PackageInfo candidate) {
+        Signature[] result = signers(candidate);
+        if ((result == null || result.length == 0) && Build.VERSION.SDK_INT >= 28) {
+            PackageInfo legacy = pm.getPackageArchiveInfo(apk.getAbsolutePath(), PackageManager.GET_SIGNATURES);
+            result = legacy == null ? null : legacy.signatures;
+        }
+        return result;
+    }
+
     /** Android still performs its own signature and update validation during installation. */
     @SuppressWarnings("deprecation")
     static void verifyApk(Context context, File apk, Release release) throws Exception {
@@ -150,7 +161,7 @@ final class Updates {
         if (candidate == null || !UpdatePolicy.PACKAGE.equals(candidate.packageName)
                 || version(candidate) != release.version || release.version <= version(installed))
             throw new IOException("The downloaded APK isn't a newer version of this launcher.");
-        Signature[] existing = signers(installed), offered = signers(candidate);
+        Signature[] existing = signers(installed), offered = archiveSigners(pm, apk, candidate);
         if (existing == null || offered == null || existing.length != 1 || offered.length != 1
                 || !UpdatePolicy.CERT.equals(sha(existing[0].toByteArray()))
                 || !UpdatePolicy.CERT.equals(sha(offered[0].toByteArray())))
