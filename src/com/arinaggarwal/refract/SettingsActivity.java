@@ -34,6 +34,10 @@ public class SettingsActivity extends Activity {
     Theme theme;
     final android.os.Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
     final java.util.concurrent.ExecutorService worker = java.util.concurrent.Executors.newSingleThreadExecutor();
+    final java.util.concurrent.ExecutorService updateWorker = java.util.concurrent.Executors.newSingleThreadExecutor();
+    java.util.concurrent.atomic.AtomicBoolean updateCancel;
+    Sheet updateSheet;
+    Updates.Release readyUpdate;
 
     @Override
     protected void onCreate(Bundle b) {
@@ -53,6 +57,8 @@ public class SettingsActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        if (updateCancel != null) updateCancel.set(true);
+        updateWorker.shutdownNow();
         worker.shutdownNow();
         handler.removeCallbacksAndMessages(null);
         super.onDestroy();
@@ -141,7 +147,10 @@ public class SettingsActivity extends Activity {
 
     @Override
     public void onBackPressed() {
-        if (sheet != null) sheet.dismiss();
+        if (sheet != null) {
+            if (sheet == updateSheet && updateCancel != null) updateCancel.set(true);
+            sheet.dismiss();
+        }
         else if (page.equals(ATTRIB)) show(ABOUT);
         else if (page.equals(BACKGROUND)) show(HOME);
         else if (!page.equals(ROOT)) show(ROOT);
@@ -532,11 +541,141 @@ public class SettingsActivity extends Activity {
 
     void pageAbout() {
         row("Refract Launcher", () -> "Version " + version(), () -> { });
+        row("Check for Updates", () -> readyUpdate == null ? "" : "Ready to install", () -> {
+            if (readyUpdate != null) offerUpdateInstall(readyUpdate);
+            else checkForUpdates();
+        });
         row("Made by", () -> "Hydrainnit", () -> { });
         row("Based on", () -> "Hume Launcher by Petrobot", () -> show(ATTRIB));
         row("Weather", () -> Weather.sourceName(Weather.source(this)), () -> { });
         row("News", () -> News.sources(this).size() + " Indian newsrooms", () -> { });
         nav(ATTRIB, () -> "Credits & licences");
+    }
+
+    /** Keep network and APK parsing off the TV's UI thread; Back cancels the active step. */
+    void checkForUpdates() {
+        java.util.concurrent.atomic.AtomicBoolean cancel = new java.util.concurrent.atomic.AtomicBoolean();
+        updateCancel = cancel;
+        TextView progressText = updateProgress("Looking for a new release...");
+        Sheet progress = dialog("Check for Updates").setView(progressText)
+                .setNegativeButton("Cancel", (d, w) -> cancel.set(true));
+        updateSheet = progress;
+        progress.show();
+        updateWorker.execute(() -> {
+            try {
+                Updates.Release release = Updates.check();
+                long installed = Updates.installedVersion(getApplicationContext());
+                if (cancel.get()) return;
+                handler.post(() -> {
+                    if (isFinishing() || cancel.get() || sheet != progress) return;
+                    progress.dismiss();
+                    if (release.version <= installed) {
+                        updateMessage("You're up to date", "Your installed version is as new as the latest release.");
+                    } else {
+                        dialog("Update Available").setMessage(release.name + " is ready to download.")
+                                .setPositiveButton("Download", (d, w) -> downloadUpdate(release))
+                                .setNegativeButton("Not Now", null).show();
+                    }
+                });
+            } catch (Exception e) {
+                handler.post(() -> {
+                    if (isFinishing() || cancel.get() || sheet != progress) return;
+                    progress.dismiss();
+                    if (e instanceof Updates.NoRelease)
+                        updateMessage("No Releases Yet", "No update has been published yet. Check again later.");
+                    else if (e instanceof Updates.NotReady)
+                        updateMessage("Update Not Ready", "The release is still being prepared. Try again in a few minutes.");
+                    else if (e instanceof IllegalArgumentException || e instanceof org.json.JSONException)
+                        updateMessage("Update Not Verified", "The release details are invalid. Please try again later.");
+                    else updateMessage("Couldn't Check for Updates", "Check your internet connection and try again.");
+                });
+            }
+        });
+    }
+
+    TextView updateProgress(String message) {
+        TextView t = new TextView(this);
+        t.setText(message);
+        t.setTextColor(theme.textDim);
+        t.setTypeface(Ui.font(this, "regular"));
+        Ui.textSize(t, 12.5f);
+        t.setPadding(Ui.px(this, 14), Ui.px(this, 4), Ui.px(this, 14), Ui.px(this, 10));
+        return t;
+    }
+
+    void updateMessage(String title, String message) {
+        dialog(title).setMessage(message).setPositiveButton("OK", null).show();
+    }
+
+    void downloadUpdate(Updates.Release release) {
+        java.util.concurrent.atomic.AtomicBoolean cancel = new java.util.concurrent.atomic.AtomicBoolean();
+        updateCancel = cancel;
+        TextView progressText = updateProgress("Downloading 0%");
+        Sheet progress = dialog("Downloading Update").setView(progressText)
+                .setNegativeButton("Cancel", (d, w) -> cancel.set(true));
+        updateSheet = progress;
+        progress.show();
+        updateWorker.execute(() -> {
+            try {
+                final int[] last = {-1};
+                Updates.download(getApplicationContext(), release, (bytes, total) -> {
+                    if (cancel.get() || Thread.currentThread().isInterrupted()) return false;
+                    int percent = (int) (bytes * 100 / total);
+                    if (percent != last[0]) {
+                        last[0] = percent;
+                        handler.post(() -> {
+                            if (!isFinishing() && !cancel.get() && sheet == progress)
+                                progressText.setText(percent == 100 ? "Verifying update..." : "Downloading " + percent + "%");
+                        });
+                    }
+                    return true;
+                });
+                handler.post(() -> {
+                    if (isFinishing() || cancel.get() || sheet != progress) return;
+                    readyUpdate = release;
+                    progress.dismiss();
+                    offerUpdateInstall(release);
+                });
+            } catch (Exception e) {
+                handler.post(() -> {
+                    if (isFinishing() || cancel.get() || sheet != progress) return;
+                    progress.dismiss();
+                    updateMessage("Couldn't Download Update", "The update could not be downloaded or verified. Please try again.");
+                });
+            }
+        });
+    }
+
+    void offerUpdateInstall(Updates.Release release) {
+        if (android.os.Build.VERSION.SDK_INT >= 26 && !getPackageManager().canRequestPackageInstalls()) {
+            dialog("Allow Updates").setMessage("Allow Refract Custom to install apps in TV settings. "
+                    + "Then return here and select Check for Updates to install.")
+                    .setPositiveButton("Open TV Settings", (d, w) -> {
+                        try {
+                            startActivity(new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                                    android.net.Uri.parse("package:" + getPackageName())));
+                        } catch (android.content.ActivityNotFoundException | SecurityException e) {
+                            updateMessage("Open TV Settings", "Open your TV's settings and allow Refract Custom "
+                                    + "under Install unknown apps. Then return to Check for Updates.");
+                        }
+                    }).setNegativeButton("Not Now", null).show();
+            return;
+        }
+        dialog("Install Update").setMessage(release.name + " is verified and ready. "
+                + "Your TV will ask you to confirm installation.")
+                .setPositiveButton("Install", (d, w) -> {
+                    android.net.Uri uri = new android.net.Uri.Builder().scheme("content")
+                            .authority(UpdateProvider.AUTHORITY).path(UpdateProvider.PATH).build();
+                    Intent install = new Intent(Intent.ACTION_INSTALL_PACKAGE)
+                            .setDataAndType(uri, "application/vnd.android.package-archive")
+                            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                    install.setClipData(android.content.ClipData.newRawUri("Refract update", uri));
+                    try { startActivity(install); }
+                    catch (android.content.ActivityNotFoundException | SecurityException e) {
+                        updateMessage("Installer Unavailable", "Your TV couldn't open its app installer. "
+                                + "Install the release APK from a computer instead.");
+                    }
+                }).setNegativeButton("Not Now", null).show();
     }
 
     boolean screensaverAllowed() {

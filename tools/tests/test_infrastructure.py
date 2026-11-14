@@ -83,6 +83,17 @@ class InstallTests(unittest.TestCase):
             run.assert_not_called()
 
 
+class UpdaterPolicyTests(unittest.TestCase):
+    def test_android_policy_matches_the_pinned_certificate_and_rejects_bad_releases(self):
+        import tempfile
+        source = release.ROOT / 'src/com/arinaggarwal/refract/UpdatePolicy.java'
+        harness = release.ROOT / 'tools/tests/java/com/arinaggarwal/refract/UpdatePolicyTest.java'
+        self.assertIn(release.PIN.read_text().strip(), source.read_text())
+        with tempfile.TemporaryDirectory() as classes:
+            subprocess.run(['javac', '--release', '11', '-d', classes, str(source), str(harness)], check=True)
+            subprocess.run(['java', '-cp', classes, 'com.arinaggarwal.refract.UpdatePolicyTest'], check=True)
+
+
 class VersionTests(unittest.TestCase):
     @patch('release.time.time', return_value=1577836800 + 100)
     def test_remote_high_water_wins_over_local_clock(self, _):

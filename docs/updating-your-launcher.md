@@ -15,6 +15,25 @@ ADB. The current address is `172.20.25.97:5555`; the IP may change, so check the
 settings and `adb devices` if it cannot connect. If you only ask for a code change, installing it
 on the TV is a separate step: explicitly ask Codex to install the update when you are ready.
 
+## Check for updates on the TV
+
+Once the version containing the updater has been installed, open **Settings > About > Check for
+Updates**. If a newer GitHub release is available, choose **Download**, then **Install**. The TV
+will show its own installation confirmation. If asked, allow Refract Custom under the TV's
+**Install unknown apps** setting, return to About, and choose **Check for Updates** again to install.
+Your folders and settings stay in place.
+
+The first updater build must be installed once using ADB or Codex, because the currently installed
+version cannot update itself yet. A release must also be published on GitHub before there is
+anything to find. If you see **No Releases Yet**, nothing has been published. If the release is
+still being built, wait a few minutes and check again. A release is available after the signed APK
+and its `release.json` metadata have both been attached by GitHub Actions.
+
+The repository must remain public for the TV to read releases without a GitHub login.
+The launcher checks the release package, version, SHA-256 checksum, and permanent signing
+certificate before opening the system installer. Android verifies the update again during install.
+This check is manual and only contacts GitHub when you select the row.
+
 ## Update it yourself
 
 On your Mac, open Terminal and run:
@@ -69,7 +88,7 @@ backup; do not generate a new one for the existing installation.
 
 ## Optional: download a build from GitHub
 
-A local build is enough for everyday updates. If you want a downloadable GitHub release, first make
+A local build is enough for everyday updates. For TV-side updates, first make
 sure the build workflow and your changes are committed and pushed to the commit you will release.
 Publish a release with a new tag in GitHub; the **Signed custom APK** action attaches
 `refract-custom.apk`, `SHA256SUMS`, and `release.json`. Download the APK and install it with

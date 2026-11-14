@@ -11,6 +11,7 @@ source (Nayuki, MIT) under `src/io/nayuki/qrcodegen`.
 
 | Path | Responsibility |
 |---|---|
+| `Updates.java`, `UpdatePolicy.java`, `UpdateProvider.java` | GitHub release discovery, verified download, and read-only APK handoff to the system installer |
 | `Folders.java` | Profile-local named folders, membership normalization and persistence |
 | `tools/release.py` | Permanent signing, remote version reservations, verified local/CI builds |
 | `tools/tv.py` | Explicit backup, migration, guarded updates and preferred Home switching |

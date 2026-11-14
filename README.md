@@ -38,6 +38,7 @@ their studios and are fetched at runtime, not shipped in the app.
 
 ## Features
 
+- **Updates**: Settings > About > Check for Updates downloads and verifies newer GitHub releases.
 - **Appearance**: Light (frosted white glass, dark text) or Dark (smoked glass), chosen in setup
   with live previews and followed by every screen.
 - **Home**: Liquid Glass dock, 6-across app grid in Apple's measured proportions, focus lift and

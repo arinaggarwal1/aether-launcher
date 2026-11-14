@@ -77,6 +77,9 @@ builds in this workflow. Signing material is removed from the ephemeral runner a
 
 ## GitHub releases
 
+The launcher can check these from **Settings > About > Check for Updates** after the updater build
+has been installed once. See [Updating your launcher](updating-your-launcher.md#check-for-updates-on-the-tv).
+
 Commit and push the code and `.github/workflows/release.yml` before making a release from that
 commit. Publish a release with a descriptive tag such as `v1.0.0-custom.1` in your GitHub repo.
 The **Signed custom APK** workflow builds and attaches:

@@ -33,6 +33,12 @@ Settings → Home → **Run setup again** repeats it. If Home is pressed mid-way
 | ![Home Screen](images/setup-3.jpg) | ![Weather](images/setup-4.jpg) | ![Presentation](images/setup-5.jpg) |
 | ![Finish](images/setup-6.jpg) | ![Done](images/setup-7.jpg) | |
 
+## Software updates
+
+Settings > About > **Check for Updates** checks published GitHub releases on demand. A newer
+release can be downloaded and verified on the TV, then installed through the TV's own confirmation
+screen. The initial updater version must first be installed using ADB.
+
 ## Home screen
 
 - **Dock**: the first row of apps sits on a frosted Liquid Glass panel (a blurred, colour-boosted
