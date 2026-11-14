@@ -402,6 +402,8 @@ public class MainActivity extends Activity {
         }
         handler.removeCallbacks(weatherTick);
         handler.post(weatherTick);
+        handler.removeCallbacks(backgroundRotation);
+        handler.post(backgroundRotation);
         fetchPhotos();
         if (sessions == null) startNowPlaying();  // access granted while Home was open
     }
@@ -418,13 +420,35 @@ public class MainActivity extends Activity {
         if (fetchQueued) return;
         fetchQueued = true;
         photoFetch.execute(() -> {
-            Wallpapers.prefetch(this);
+            boolean updated = Wallpapers.prefetch(this);
             handler.post(() -> {
                 fetchQueued = false;
-                if (photoWanted && gridPhoto == null && !photoLoading) showGridPhoto();
+                if (updated && (Wallpapers.PHOTO + CommonsPhotos.ID).equals(wallStyle)) {
+                    releaseGridPhoto();
+                    updateGridBackground();
+                } else if (photoWanted && gridPhoto == null && !photoLoading) showGridPhoto();
             });
         });
     }
+
+    /** A single delayed callback, active only while Home is resumed. */
+    final Runnable backgroundRotation = new Runnable() {
+        @Override public void run() {
+            if (!resumed) return;
+            if (!moviesTheme && Wallpapers.rotateIfDue(MainActivity.this, System.currentTimeMillis())) {
+                wallStyle = Wallpapers.style(MainActivity.this);
+                releaseGridPhoto();
+                setWallpaper(wallStyle);
+                fetchPhotos();
+            }
+            long delay = Wallpapers.nextRotationDelay(MainActivity.this, System.currentTimeMillis());
+            if ((Wallpapers.PHOTO + CommonsPhotos.ID).equals(wallStyle)) {
+                fetchPhotos();  // update the featured photo even when rotation is off
+                delay = delay == 0 ? 3600000L : Math.min(delay, 3600000L);
+            }
+            if (delay > 0) handler.postDelayed(this, moviesTheme ? Math.max(delay, 60000L) : delay);
+        }
+    };
 
     /** Home is out of sight (an app is open): the grid photo is decoded again when it is next needed. */
     @Override
@@ -452,6 +476,7 @@ public class MainActivity extends Activity {
         resumed = false;
         handler.removeCallbacks(heroAdvance);
         handler.removeCallbacks(weatherTick);
+        handler.removeCallbacks(backgroundRotation);
         handler.removeCallbacks(idleRunnable);
         if (idle) exitIdle();
     }
@@ -605,7 +630,6 @@ public class MainActivity extends Activity {
         tmlp.rightMargin = dp(8);
         clockBox.addView(time, tmlp);
 
-        assistantButton = pillButton("waveform", btn, "Google Assistant", this::invokeAssistant);
         moviesButton = pillButton("film", btn, "Movies", this::showMovies);
         searchButton = pillButton("search", btn, "Search", () -> showSearch(null));
         settingsButton = pillButton("gear", btn, "Refract Settings", this::openRefractSettings);
@@ -632,7 +656,7 @@ public class MainActivity extends Activity {
                 v.animate().scaleX(has ? 1.18f : 1f).scaleY(has ? 1.18f : 1f).translationZ(has ? dp(8) : 0)
                         .setDuration(200).setInterpolator(LIFT).start());
         avatar.setOnClickListener(v -> showProfilePicker(false));
-        statusRow = new ArrayList<>(Arrays.asList(assistantButton, moviesButton, searchButton, settingsButton, ccButton, avatar));
+        statusRow = new ArrayList<>(Arrays.asList(moviesButton, searchButton, settingsButton, ccButton, avatar));
 
         // The status pill and, left of it while music plays in the background, the Now Playing pill.
         statusBar = new LinearLayout(this);
@@ -1949,13 +1973,13 @@ public class MainActivity extends Activity {
         boolean noKey = moviesTheme && !Movies.configured(this);
         boolean show = (continueMode() && heroItems.isEmpty() || noKey) && !folderMode;
         if (noKey) {
-            shelfEmpty.setText("Movies Home needs a TMDB API key.\nAdd one in Settings \u2192 API & Content Services.");
+            shelfEmpty.setText("Movies Home needs a TMDB API key.\nAdd one in Settings \u2192 Content & Search \u2192 API Keys.");
         } else if (show) {
             shelfEmpty.setText(MediaWatchService.granted(this)
                     ? "Shows and movies you play will appear here."
                     : !Perms.listenerSupported(this)
                     ? "Continue Watching isn't available on this TV (Android limits it on low-memory TVs)."
-                    : "To see what you watch here, allow it in Settings \u2192 Permissions.");
+                    : "To see what you watch here, allow it in Settings \u2192 Device & App \u2192 Permissions.");
         }
         shelfEmpty.animate().alpha(show ? 0.75f : 0f).setDuration(250).start();
     }
@@ -2221,7 +2245,7 @@ public class MainActivity extends Activity {
     /** Carousel focused: the dock slides away and the artwork takes the whole screen (tvOS Top Shelf). */
     boolean heroRequested;
 
-    ImageView avatarView, ccButton, refreshButton, searchButton, settingsButton, assistantButton, moviesButton, netIcon;
+    ImageView avatarView, ccButton, refreshButton, searchButton, settingsButton, moviesButton, netIcon;
     /** The status pill's buttons, left to right. */
     List<View> statusRow;
     LinearLayout statusBar;
@@ -4816,6 +4840,7 @@ public class MainActivity extends Activity {
             }
         }).start();
         if (q != null && !q.isEmpty()) search.setQuery(q);
+        else search.showKeyboard();
     }
 
     /** How long Back is held on Home to open Search. */
@@ -5171,6 +5196,9 @@ public class MainActivity extends Activity {
         releaseGridPhoto();
         wallStyle = Wallpapers.style(this);
         setWallpaper(wallStyle);
+        handler.removeCallbacks(backgroundRotation);
+        if (resumed) handler.post(backgroundRotation);
+        fetchPhotos();
         folderMode = false;
         moveIndex = -1;
         String mode = prefs.getString("shelf_mode", "suggest");

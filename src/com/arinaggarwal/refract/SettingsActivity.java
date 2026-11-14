@@ -68,7 +68,8 @@ public class SettingsActivity extends Activity {
     static final String ROOT = "root", PROFILES = "Profiles", SHELF = "Top Shelf", PRESENT = "Presentation",
             INPUTS = "Inputs", WEATHER = "Weather", WATCHING = "Continue Watching", HOME = "Home",
             PERMS = "Permissions", ABOUT = "About", APPEARANCE = "Appearance", BACKGROUND = "Background",
-            API = "API & Content Services", MOVIES = "Movies", SCREENSAVER = "Screensaver & Clock", ATTRIB = "Attributions";
+            API = "API & Content Services", MOVIES = "Movies", SCREENSAVER = "Screensaver & Clock", ATTRIB = "Attributions",
+            HOME_GROUP = "Home & Appearance", CONTENT_GROUP = "Content & Search", SYSTEM_GROUP = "Device & App";
 
     FrameLayout leftPane;
     ScrollView scroller;
@@ -126,11 +127,14 @@ public class SettingsActivity extends Activity {
             case MOVIES: pageMovies(); break;
             case SCREENSAVER: pageScreensaver(); break;
             case ATTRIB: pageAttributions(); break;
+            case HOME_GROUP: pageHomeGroup(); break;
+            case CONTENT_GROUP: pageContentGroup(); break;
+            case SYSTEM_GROUP: pageSystemGroup(); break;
             default: pageRoot(); break;
         }
         scroller.scrollTo(0, 0);
         // Returning to the main list puts focus back on the section you came from.
-        android.view.View focus = p.equals(ROOT) && lastPage != null ? navRows.get(lastPage) : null;
+        android.view.View focus = lastPage != null ? navRows.get(lastPage) : null;
         if (focus == null) {
             for (int i = 0; i < list.getChildCount(); i++) {
                 if (list.getChildAt(i).isFocusable()) {
@@ -153,6 +157,9 @@ public class SettingsActivity extends Activity {
         }
         else if (page.equals(ATTRIB)) show(ABOUT);
         else if (page.equals(BACKGROUND)) show(HOME);
+        else if (page.equals(HOME) || page.equals(APPEARANCE) || page.equals(INPUTS) || page.equals(SCREENSAVER)) show(HOME_GROUP);
+        else if (page.equals(SHELF) || page.equals(MOVIES) || page.equals(WATCHING) || page.equals(API)) show(CONTENT_GROUP);
+        else if (page.equals(PERMS) || page.equals(ABOUT)) show(SYSTEM_GROUP);
         else if (!page.equals(ROOT)) show(ROOT);
         else super.onBackPressed();
     }
@@ -198,7 +205,7 @@ public class SettingsActivity extends Activity {
         left.addView(icon, new LinearLayout.LayoutParams(Ui.px(this, 150), Ui.px(this, 90)));
 
         TextView title = new TextView(this);
-        title.setText(p.equals(ROOT) ? "Settings" : p);
+        title.setText(p.equals(ROOT) ? "Settings" : displayName(p));
         title.setTextColor(theme.text);
         title.setMaxWidth(Ui.px(this, 300));
         title.setTypeface(Ui.font(this, "display"));
@@ -260,9 +267,24 @@ public class SettingsActivity extends Activity {
 
     // ---------------------------------------------------------------- pages
 
+    /** Group the existing settings by the task the user is trying to complete. */
     void pageRoot() {
+        nav(HOME_GROUP, () -> "Layout & look");
+        nav(CONTENT_GROUP, () -> "Movies, news & search");
+        nav(WEATHER, () -> !Weather.enabled(this) ? "Off" : Weather.place(this).isEmpty() ? "On" : Weather.place(this));
         nav(PROFILES, () -> Profiles.current(this).name);
+        nav(PRESENT, () -> com.arinaggarwal.refract.present.Presenter.enabled(this) ? "On" : "Off");
+        nav(SYSTEM_GROUP, () -> "Permissions & updates");
+    }
+
+    void pageHomeGroup() {
+        nav(HOME, this::backgroundName);
         nav(APPEARANCE, () -> theme.light ? "Light" : "Dark");
+        nav(SCREENSAVER, this::idleName);
+        if (!Inputs.list(this).isEmpty()) nav(INPUTS, () -> Inputs.showCard(this) ? "On" : "Off");
+    }
+
+    void pageContentGroup() {
         nav(SHELF, () -> {
             switch (Suggestions.shelf(this)) {
                 case Suggestions.SHELF_RECS: return "Recommendations";
@@ -271,16 +293,23 @@ public class SettingsActivity extends Activity {
                 default: return "Recommendations & News";
             }
         });
-        nav(PRESENT, () -> com.arinaggarwal.refract.present.Presenter.enabled(this) ? "On" : "Off");
-        if (!Inputs.list(this).isEmpty()) nav(INPUTS, () -> Inputs.showCard(this) ? "On" : "Off");
-        nav(WEATHER, () -> !Weather.enabled(this) ? "Off" : Weather.place(this).isEmpty() ? "On" : Weather.place(this));
+        nav(MOVIES, () -> Movies.homeTheme(this) ? "Home theme on" : Movies.configured(this) ? "Movies tab" : "Needs TMDB key");
         nav(WATCHING, () -> !Profiles.homePrefs(this).getBoolean("cw_enabled", true) ? "Off" : MediaWatchService.granted(this) ? "On"
                 : Perms.listenerSupported(this) ? "Needs permission" : "Not on this TV");
-        nav(HOME, this::backgroundName);
-        nav(MOVIES, () -> Movies.homeTheme(this) ? "Home theme on" : Movies.configured(this) ? "Movies tab" : "Needs TMDB key");
-        nav(SCREENSAVER, this::idleName);
         nav(API, () -> Secrets.has(this, Secrets.TMDB) ? "TMDB " + Secrets.describe(Secrets.status(this, Secrets.TMDB)).toLowerCase()
                 : "Not configured");
+        section("Search");
+        row("Movies & TV in search", () -> Search.titlesEnabled(this) ? "On" : "Off", () -> {
+            Search.prefs(this).edit().putBoolean(Search.K_TITLES, !Search.titlesEnabled(this)).apply();
+            refreshAll();
+        });
+        row("Recent searches", () -> Search.recent(this).isEmpty() ? "None" : "Clear", () -> {
+            Search.clearRecent(this);
+            refreshAll();
+        });
+    }
+
+    void pageSystemGroup() {
         nav(PERMS, () -> {
             int missing = (Perms.hasListener(this) || !Perms.listenerSupported(this) ? 0 : 1) + (Perms.hasLocation(this) ? 0 : 1)
                     + (Perms.hasAdmin(this) || !Perms.adminSupported(this) ? 0 : 1) + (Perms.isDefaultHome(this) ? 0 : 1);
@@ -566,15 +595,6 @@ public class SettingsActivity extends Activity {
         row("Navigation sounds", () -> Clicks.enabled(this) ? "On" : "Off",
                 () -> Clicks.setEnabled(this, !Clicks.enabled(this)));
         row("Screensaver & idle Home", this::idleName, () -> show(SCREENSAVER));
-        section("Search");
-        row("Movies & TV in search", () -> Search.titlesEnabled(this) ? "On" : "Off", () -> {
-            Search.prefs(this).edit().putBoolean(Search.K_TITLES, !Search.titlesEnabled(this)).apply();
-            refreshAll();
-        });
-        row("Recent searches", () -> Search.recent(this).isEmpty() ? "None" : "Clear", () -> {
-            Search.clearRecent(this);
-            refreshAll();
-        });
         section("Setup");
         row("Run setup again", () -> "", () -> startActivity(new Intent(this, SetupActivity.class)));
         row("Reset app layout", () -> "", () -> {
@@ -789,9 +809,19 @@ public class SettingsActivity extends Activity {
         String get();
     }
 
+    /** Names describe the task while the existing page keys remain stable. */
+    String displayName(String target) {
+        if (target.equals(SHELF)) return "Recommendations & News";
+        if (target.equals(API)) return "API Keys";
+        if (target.equals(HOME)) return "Home Screen";
+        if (target.equals(PRESENT)) return "Presentation Mode";
+        if (target.equals(INPUTS)) return "TV Inputs";
+        return target;
+    }
+
     /** A row that opens a section page: label, current value and a chevron. */
     void nav(String target, Value value) {
-        android.view.View r = row(target, () -> value.get() + "   \u203a", () -> show(target));
+        android.view.View r = row(displayName(target), () -> value.get() + "   \u203a", () -> show(target));
         navRows.put(target, r);
     }
 
@@ -1055,10 +1085,46 @@ public class SettingsActivity extends Activity {
     String previewId;
 
     void pageBackground() {
-        Wallpapers.Photo cur = Wallpapers.selected(this);
-        note("Shown behind your apps when you move down to them. Photos from Pexels, credited on screen and in Attributions. "
-                + "They download to the TV when first shown; without the internet, Refract's gradients appear instead. "
-                + "4K is sharper only on TVs that draw apps in 4K.");
+        note("Choose a photo or let backgrounds change automatically. Photos show behind the app grid; "
+                + "the Movies Home Theme uses movie artwork instead. Downloaded photos also work offline.");
+        row("Change background", () -> {
+            int minutes = Wallpapers.rotationMinutes(this);
+            return minutes == 0 ? "Never" : minutes == 1440 ? "Every day" : minutes == 60 ? "Every hour" : minutes >= 60 ? "Every " + (minutes / 60) + " hours" : "Every " + minutes + " minutes";
+        }, () -> {
+            int[] values = {0, 30, 60, 360, 1440};
+            String[] names = {"Never (keep this photo)", "Every 30 minutes", "Every hour", "Every 6 hours", "Every day"};
+            int selected = 0;
+            for (int i = 0; i < values.length; i++) if (values[i] == Wallpapers.rotationMinutes(this)) selected = i;
+            dialog("Change background").setSingleChoiceItems(names, selected, (d, w) -> {
+                Wallpapers.setRotation(this, values[w]);
+                if (values[w] > 0) fetchPhotos();
+                d.dismiss();
+                show(BACKGROUND);
+            }).show();
+        });
+        if (Wallpapers.rotationMinutes(this) > 0) {
+            row("Rotate through", () -> Wallpapers.rotateAll(this) ? "All photos" : "Current category", () -> {
+                String[] names = {"All photos", "Current category"};
+                dialog("Rotate through").setSingleChoiceItems(names, Wallpapers.rotateAll(this) ? 0 : 1, (d, w) -> {
+                    Wallpapers.home(this).edit().putBoolean(Wallpapers.K_ROTATE_ALL, w == 0).apply();
+                    d.dismiss();
+                    refreshAll();
+                    fetchPhotos();
+                }).show();
+            });
+        }
+        row("Wikimedia photo of the day", () -> CommonsPhotos.ID.equals(
+                Wallpapers.style(this).replace(Wallpapers.PHOTO, "")) ? "Selected" : "Free \u00b7 no key", () -> {
+            Wallpapers.select(this, Wallpapers.byId(this, CommonsPhotos.ID));
+            fetchPhotos();
+            Toast.makeText(this, "Daily photo selected", Toast.LENGTH_SHORT).show();
+            show(BACKGROUND);
+        });
+        Wallpapers.Photo shown = Wallpapers.selected(this);
+        if (shown != null && CommonsPhotos.ID.equals(shown.id)) {
+            row("Photo credit", () -> shown.photographer, () -> dialog("Photo credit")
+                    .setMessage(shown.credit() + "\n" + shown.sourceUrl + "\n" + shown.licenseUrl).setPositiveButton("Done", null).show());
+        }
         row("Photo Quality", () -> Wallpapers.quality(this).equals("2160") ? "4K" : "1080p", () -> {
             String[] keys = {"1080", "2160"};
             String[] names = {"1080p  (about 0.4 MB a photo)", "4K  (about 1.5 MB a photo)"};
@@ -1078,6 +1144,7 @@ public class SettingsActivity extends Activity {
             return b == 0 ? "None yet" : String.format(java.util.Locale.US, "%.1f MB", b / 1048576f);
         }, () -> { });
         for (Wallpapers.Category c : Wallpapers.categories(this)) {
+            if (CommonsPhotos.CATEGORY.equals(c.id)) continue;
             List<Wallpapers.Photo> in = Wallpapers.inCategory(this, c.id);
             if (in.isEmpty()) continue;
             section(c.name);
@@ -1097,7 +1164,7 @@ public class SettingsActivity extends Activity {
                     base.onFocusChange(v, has);
                     if (has) previewPhoto(p);
                 });
-                if (cur != null && cur.id.equals(p.id)) handler.post(r::requestFocus);
+
             }
         }
     }
@@ -1132,13 +1199,13 @@ public class SettingsActivity extends Activity {
                         "A v3 API key or a v4 read access token, free at themoviedb.org \u2192 Settings \u2192 API."));
         row("Status", () -> Secrets.describe(Secrets.status(this, Secrets.TMDB)), () -> { });
         row("Test TMDB key", () -> "", this::testTmdb);
-        section("Pexels");
+        section("Previous Pexels key");
         row("Pexels key", () -> Secrets.has(this, Secrets.PEXELS) ? Secrets.masked(Secrets.get(this, Secrets.PEXELS)) : "Not configured",
                 () -> editKey(Secrets.PEXELS, "Pexels key", "Saved for when the Pexels API is available again. It isn't checked or used now."));
         row("Status", () -> Wallpapers.PEXELS_API_PAUSED && Secrets.has(this, Secrets.PEXELS) ? "Saved \u00b7 API paused"
                 : Secrets.describe(Secrets.status(this, Secrets.PEXELS)), () -> { });
         section("Privacy");
-        note("Keys stay on this TV, encrypted with its keystore, and are sent only to TMDB or Pexels. Like any key kept "
+        note("Wikimedia photos need no key. Existing Pexels keys are kept on this TV. Keys stay encrypted in its keystore, and are sent only to TMDB or Pexels. Like any key kept "
                 + "in an app, a determined owner of the device could extract it, so use a free personal key.");
     }
 
@@ -1378,8 +1445,9 @@ public class SettingsActivity extends Activity {
         credit("QR Code generator (Java)", "Project Nayuki \u00b7 MIT", "Copyright (c) Project Nayuki, MIT License.");
         section("Photographs");
         for (Wallpapers.Photo p : Wallpapers.all(this)) {
-            credit(p.title, p.photographer + " on Pexels", p.credit() + "\n" + (p.sourceUrl == null ? "" : p.sourceUrl)
-                    + "\nFree to use under the Pexels License (pexels.com/license).");
+            credit(p.title, p.photographer + " on " + p.source, p.credit() + "\n" + (p.sourceUrl == null ? "" : p.sourceUrl)
+                    + (p.source.equals("Pexels") ? "\nPexels License: https://www.pexels.com/license/"
+                    : "\n" + p.licenseUrl));
         }
         section("Data & services");
         credit("TMDB", "Movie data & artwork", "This product uses the TMDB API but is not endorsed or certified by TMDB. "

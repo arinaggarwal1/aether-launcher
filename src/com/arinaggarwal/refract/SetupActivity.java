@@ -527,7 +527,7 @@ public class SetupActivity extends Activity {
         Wallpapers.Photo cur = Wallpapers.selected(this);
         if (lookCategory == null) {
             title("Choose a Background");
-            subtitle("Photographs from Pexels, chosen to work in Light and Dark. Move through the list to preview.");
+            subtitle("Choose a photo for Home. Wikimedia Commons also offers a new featured photo each day; no key is needed.");
             setBackdrop(cur != null ? cur : Wallpapers.defaultPhoto(this));
             String curCat = cur == null ? "" : cur.category;
             LinearLayout l = list();
@@ -633,20 +633,16 @@ public class SetupActivity extends Activity {
     }
 
     /**
-     * Optional keys, entered right here: TMDB (movies, artwork, ratings) and Pexels (more
-     * photographs, while the API is available). Both can be skipped; nothing in Refract needs them.
-     * Keys are hidden while typed unless Show is pressed, saved encrypted with the TV's keystore
-     * and never shown in full again. TMDB is checked with one request; Pexels is saved unverified
-     * because its API is paused, so a check would fail for reasons that have nothing to do with the key.
+     * Optional TMDB key for movies and artwork. It stays encrypted on the TV and can be skipped;
+     * Wikimedia backgrounds require no key. Previously saved Pexels keys remain untouched.
      */
     void apiKeys() {
         title("Content & API");
         subtitle("Optional. A free TMDB key adds movie artwork, ratings and the Movies tab. Keys stay on this TV, "
-                + "encrypted, and can be changed in Settings \u2192 API & Content Services.");
+                + "encrypted, and can be changed in Settings \u2192 Content & Search \u2192 API Keys.");
         LinearLayout l = list();
         keyField(l, Secrets.TMDB, "TMDB API key or read access token");
-        keyField(l, Secrets.PEXELS, "Pexels API key (saved, not checked while the API is paused)");
-        option(l, "Continue", Secrets.has(this, Secrets.TMDB) || Secrets.has(this, Secrets.PEXELS) ? null : "Skip for now", false, this::next);
+        option(l, "Continue", Secrets.has(this, Secrets.TMDB) ? null : "Skip for now", false, this::next);
         dots();
     }
 

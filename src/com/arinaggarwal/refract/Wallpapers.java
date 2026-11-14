@@ -43,6 +43,8 @@ final class Wallpapers {
     static final String K_REMOTE = "pexels_remote";
     /** Photo quality: "1080" (1920x1080, ~0.4 MB a photo) or "2160" (3840x2160, ~1.5 MB). */
     static final String K_QUALITY = "photo_quality";
+    static final String K_ROTATE = "background_rotate_minutes", K_ROTATE_ALL = "background_rotate_all",
+            K_ROTATED_AT = "background_rotated_at";
 
     static final class Category {
         final String id, name;
@@ -56,7 +58,7 @@ final class Wallpapers {
     static final class Photo {
         String id, file, category, theme, title, photographer, photographerUrl, sourceUrl;
         /** Remote (Pexels API) photos: the image URL; the file is then a disk-cache name. */
-        String url = "";
+        String url = "", source = "Pexels", license = "", licenseUrl = "";
 
         boolean remote() {
             return !url.isEmpty();
@@ -64,7 +66,7 @@ final class Wallpapers {
 
         /** "Photo: Name on Pexels", for the screensaver and the wallpaper browser. */
         String credit() {
-            return "Photo: " + photographer + " on Pexels";
+            return "Photo: " + photographer + " on " + source + (license.isEmpty() ? "" : " \u00b7 " + license);
         }
     }
 
@@ -87,6 +89,8 @@ final class Wallpapers {
             android.util.Log.w("TvHome", "wallpapers: " + e);
         }
         photos.addAll(remoteCached(c));
+        categories.add(new Category(CommonsPhotos.CATEGORY, "Wikimedia Commons"));
+        photos.add(CommonsPhotos.cached(c));
     }
 
     static Photo fromJson(JSONObject p) {
@@ -100,8 +104,13 @@ final class Wallpapers {
         ph.photographerUrl = p.optString("photographer_url");
         ph.sourceUrl = p.optString("source_url");
         ph.url = p.optString("url");
+        ph.source = p.optString("source", "Pexels");
+        ph.license = p.optString("license", "");
+        ph.licenseUrl = p.optString("license_url", "");
         return ph;
     }
+
+    static synchronized void invalidate() { photos = null; }
 
     static List<Category> categories(Context c) {
         load(c);
@@ -162,7 +171,43 @@ final class Wallpapers {
     }
 
     static void select(Context c, Photo p) {
-        home(c).edit().putString(K_WALL, PHOTO + p.id).putString(K_CATEGORY, p.category).apply();
+        home(c).edit().putString(K_WALL, PHOTO + p.id).putString(K_CATEGORY, p.category)
+                .putLong(K_ROTATED_AT, System.currentTimeMillis()).apply();
+    }
+
+    static int rotationMinutes(Context c) { return home(c).getInt(K_ROTATE, 0); }
+
+    static boolean rotateAll(Context c) { return home(c).getBoolean(K_ROTATE_ALL, true); }
+
+    static void setRotation(Context c, int minutes) {
+        home(c).edit().putInt(K_ROTATE, minutes).putLong(K_ROTATED_AT, System.currentTimeMillis()).apply();
+    }
+
+    /** Advance only when due, once after wake; keep the setting and current photo per profile. */
+    static boolean rotateIfDue(Context c, long now) {
+        int minutes = rotationMinutes(c);
+        if (minutes <= 0) return false;
+        long last = home(c).getLong(K_ROTATED_AT, now);
+        if (now < last || now - last < minutes * 60000L) return false;
+        List<Photo> options = rotateAll(c) ? new ArrayList<>(all(c)) : inCategory(c, category(c));
+        Photo current = selected(c);
+        boolean offline = !online(c);
+        options.removeIf(p -> current != null && p.id.equals(current.id) || offline && !downloaded(c, p));
+        if (options.isEmpty()) {
+            home(c).edit().putLong(K_ROTATED_AT, now).apply();
+            return false;
+        }
+        Photo next = options.get(new java.util.Random().nextInt(options.size()));
+        home(c).edit().putString(K_WALL, PHOTO + next.id).putString(K_CATEGORY, next.category)
+                .putLong(K_ROTATED_AT, now).apply();
+        return true;
+    }
+
+    static long nextRotationDelay(Context c, long now) {
+        int minutes = rotationMinutes(c);
+        if (minutes <= 0) return 0;
+        long last = home(c).getLong(K_ROTATED_AT, now);
+        return Math.max(1000L, minutes * 60000L - Math.max(0L, now - last));
     }
 
     /** The category the screensaver cycles through: the selected photo's, unless chosen separately. */
@@ -201,6 +246,11 @@ final class Wallpapers {
     }
 
     private static InputStream open(Context c, Photo p) throws Exception {
+        if (CommonsPhotos.ID.equals(p.id)) {
+            File f = CommonsPhotos.image(c, p);
+            if (f == null) throw new java.io.FileNotFoundException(p.id);
+            return new FileInputStream(f);
+        }
         if (p.remote()) return new FileInputStream(new File(remoteDir(c), p.file));
         File f = local(c, p, true);
         if (f == null) throw new java.io.FileNotFoundException(p.id);
@@ -230,6 +280,7 @@ final class Wallpapers {
 
     /** True when this photo can be shown without the internet (at either quality). */
     static boolean downloaded(Context c, Photo p) {
+        if (CommonsPhotos.ID.equals(p.id)) return CommonsPhotos.image(c, p) != null;
         return p.remote() || new File(dir(c, "1080"), pexelsId(p) + ".jpg").exists()
                 || new File(dir(c, "2160"), pexelsId(p) + ".jpg").exists();
     }
@@ -298,10 +349,14 @@ final class Wallpapers {
      * rotation still works when the internet is gone. Photos already on disk cost nothing. Off
      * the UI thread.
      */
-    static void prefetch(Context c) {
-        if (!online(c)) return;
+    static boolean prefetch(Context c) {
+        if (!online(c)) return false;
+        boolean updated = false;
+        if (CommonsPhotos.ID.equals(style(c).replace(PHOTO, "")) || rotationMinutes(c) > 0 && rotateAll(c)) {
+            updated = CommonsPhotos.refresh(c);
+        }
         Photo sel = selected(c);
-        if (sel != null && !sel.remote()) local(c, sel, true);
+        if (sel != null && !sel.remote() && !CommonsPhotos.ID.equals(sel.id)) local(c, sel, true);
         Ambient.Settings s = Ambient.Settings.load(c);
         List<Photo> want = new ArrayList<>();
         if (s.mode.equals(Ambient.SINGLE)) {
@@ -312,9 +367,10 @@ final class Wallpapers {
             if (want.isEmpty()) want.addAll(all(c));  // the screensaver falls back to every photo too
         }
         for (Photo p : want) {
-            if (!p.remote() && !online(c)) return;
-            if (!p.remote()) local(c, p, true);
+            if (!p.remote() && !online(c)) return updated;
+            if (!p.remote() && !CommonsPhotos.ID.equals(p.id)) local(c, p, true);
         }
+        return updated;
     }
 
     /** Settings: space used by downloaded photos, in bytes. */
@@ -324,6 +380,8 @@ final class Wallpapers {
             File[] fs = dir(c, q).listFiles();
             if (fs != null) for (File f : fs) n += f.length();
         }
+        File[] commons = CommonsPhotos.dir(c).listFiles();
+        if (commons != null) for (File f : commons) if (f.getName().endsWith(".jpg")) n += f.length();
         return n;
     }
 

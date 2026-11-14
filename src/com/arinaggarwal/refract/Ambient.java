@@ -385,7 +385,7 @@ final class Ambient extends FrameLayout {
             showMovie(0);
         }
         if (!Movies.configured(getContext())) {
-            if (c == null) noMovies("Movies need a TMDB API key. Add one in Settings \u2192 API & Content Services.");
+            if (c == null) noMovies("Movies need a TMDB API key. Add one in Settings \u2192 Content & Search \u2192 API Keys.");
             return;
         }
         io.execute(() -> {

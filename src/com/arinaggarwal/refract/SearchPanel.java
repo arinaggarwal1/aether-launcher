@@ -21,6 +21,11 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewOutlineProvider;
 import android.widget.FrameLayout;
+import android.widget.EditText;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.view.inputmethod.InputMethodManager;
+import android.content.Context;
 import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -37,30 +42,22 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * Search, as on tvOS: the Home Screen blurred behind, what you typed at the top, a one-row
- * keyboard, and rows of results under it. Apps, settings and inputs match on every key press with
+ * Search over the blurred Home Screen, using the TV's input method and rows of results. Apps, settings and inputs match on every key press with
  * no network; movies and series (JustWatch, any service in India, and Stremio) are fetched once
  * typing pauses. OK on a title opens its "How to Watch" sheet with an Open / Get button per app.
  *
  * Geometry in design units (960 x 540, half of Apple's 1920 x 1080 points): 48 side margin as the
- * Home Screen, query 26 high at the top, keys on a 30 pitch, poster lockups 96 x 144 (2:3).
+ * Home Screen, query 26 high at the top and poster lockups 96 x 144 (2:3).
  */
 final class SearchPanel {
 
     static final int REQ_VOICE = 7301, REQ_MIC = 7302;
     static final long DEBOUNCE_MS = 350;
-    static final String LATIN = "abcdefghijklmnopqrstuvwxyz";
-    static final String DIGITS = "1234567890.-'&:!?";
-    static final String HINDI = "\u0905\u0906\u0907\u0908\u0909\u090a\u090f\u0910\u0913\u0914"
-            + "\u0915\u0916\u0917\u0918\u091a\u091b\u091c\u091d\u091f\u0920\u0921\u0922\u0923"
-            + "\u0924\u0925\u0926\u0927\u0928\u092a\u092b\u092c\u092d\u092e\u092f\u0930\u0932\u0935"
-            + "\u0936\u0937\u0938\u0939\u093e\u093f\u0940\u0941\u0942\u0947\u0948\u094b\u094c\u0902\u094d";
 
     final MainActivity a;
     final FrameLayout layer;
-    final TextView queryView;
-    final LinearLayout keys, list;
-    final HorizontalScrollView keyScroll;
+    final EditText queryView;
+    final LinearLayout list;
     final ScrollView results;
     final StringBuilder query = new StringBuilder();
     final Search.Apps apps;
@@ -71,10 +68,8 @@ final class SearchPanel {
             return size() > 20;
         }
     };
-    final Map<String, List<Search.Title>> stremioCache = new LinkedHashMap<String, List<Search.Title>>(24, 0.75f, true) {
-        @Override protected boolean removeEldestEntry(Map.Entry<String, List<Search.Title>> e) {
-            return size() > 20;
-        }
+    final Map<String, List<Search.Title>> playerCache = new LinkedHashMap<String, List<Search.Title>>(24, 0.75f, true) {
+        @Override protected boolean removeEldestEntry(Map.Entry<String, List<Search.Title>> e) { return size() > 20; }
     };
     /** Decoded posters and logos, capped at 1/12 of the heap (the 1 GB TV gets ~16 MB). */
     final LruCache<String, Bitmap> bitmaps = new LruCache<String, Bitmap>((int) (Runtime.getRuntime().maxMemory() / 12)) {
@@ -89,11 +84,11 @@ final class SearchPanel {
     GradientDrawable micBg;
     SpeechRecognizer recognizer;
     boolean listening, heard;
-    int mode, gen;
+    int gen;
     String failed;
     FrameLayout sheet;
     View sheetReturn;
-    LinearLayout titleRow, stremioRow;
+    LinearLayout titleRow;
     TextView titleStatus;
     boolean closed;
 
@@ -139,25 +134,33 @@ final class SearchPanel {
             mlp.rightMargin = a.dp(14);
             head.addView(mic, mlp);
         }
-        queryView = a.text(26, Ui.font(a, "display"), 1f);
+        queryView = new EditText(a);
         queryView.setSingleLine(true);
-        queryView.setEllipsize(TextUtils.TruncateAt.START);
+        queryView.setTextColor(Color.WHITE);
+        queryView.setHintTextColor(0xB3FFFFFF);
+        queryView.setTypeface(Ui.font(a, "display"));
+        Ui.textSize(queryView, 26);
+        queryView.setBackgroundColor(0x00000000);
+        queryView.setHint("Search apps, movies and shows");
+        queryView.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
+        queryView.setImeOptions(android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH);
+        queryView.setOnEditorActionListener((v, action, event) -> {
+            hideKeyboard();
+            View first = firstResult();
+            if (first != null) first.requestFocus();
+            return true;
+        });
+        queryView.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
+                query.setLength(0);
+                query.append(s);
+                changed();
+            }
+            @Override public void afterTextChanged(Editable e) { }
+        });
         head.addView(queryView, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
         col.addView(head, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-
-        keyScroll = new HorizontalScrollView(a);
-        keyScroll.setHorizontalScrollBarEnabled(false);
-        keyScroll.setOverScrollMode(View.OVER_SCROLL_NEVER);
-        keyScroll.setClipToPadding(false);
-        keyScroll.setClipChildren(false);
-        keyScroll.setPadding(a.dockOuter - a.dp(6), a.dp(8), a.dockOuter, a.dp(8));
-        keys = new LinearLayout(a);
-        keys.setOrientation(LinearLayout.HORIZONTAL);
-        keys.setClipChildren(false);
-        keyScroll.addView(keys);
-        LinearLayout.LayoutParams klp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, a.dp(50));
-        klp.topMargin = a.dp(10);
-        col.addView(keyScroll, klp);
 
         results = new ScrollView(a);
         results.setVerticalScrollBarEnabled(false);
@@ -171,94 +174,27 @@ final class SearchPanel {
         results.addView(list, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         col.addView(results, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
 
-        buildKeys(null);
-        showQuery();
         render();
     }
 
-    // ---------------------------------------------------------------- keyboard
-
-    /** The one-row keyboard for the current mode, then space, delete, mode switches and the mic. */
-    void buildKeys(String focusLabel) {
-        keys.removeAllViews();
-        String chars = mode == 1 ? DIGITS : mode == 2 ? HINDI : LATIN;
-        List<View> made = new ArrayList<>();
-        for (int i = 0; i < chars.length(); i++) {
-            String ch = String.valueOf(chars.charAt(i));
-            made.add(key(ch, a.dp(30), () -> type(ch)));
-        }
-        made.add(key("space", a.dp(64), () -> type(" ")));
-        made.add(key("\u232b", a.dp(40), this::backspace));
-        made.add(key(mode == 1 ? "abc" : "123", a.dp(48), () -> switchMode(mode == 1 ? 0 : 1)));
-        made.add(key(mode == 2 ? "abc" : "\u0905\u0906", a.dp(48), () -> switchMode(mode == 2 ? 0 : 2)));
-        made.add(key("clear", a.dp(56), this::clear));
-        View focus = made.get(0);
-        for (View k : made) {
-            keys.addView(k);
-            if (focusLabel != null && focusLabel.equals(k.getTag())) focus = k;
-        }
-        // The ends of the row stop focus instead of wrapping into the results.
-        made.get(0).setNextFocusLeftId(made.get(0).getId());
-        made.get(made.size() - 1).setNextFocusRightId(made.get(made.size() - 1).getId());
-        if (focusLabel != null || keys.getTag() == null) focus.requestFocus();
-        keys.setTag("built");
-    }
-
-    View key(String label, int w, Runnable click) {
-        FrameLayout k = new FrameLayout(a);
-        k.setId(View.generateViewId());
-        k.setTag(label);
-        k.setFocusable(true);
-        k.setClickable(true);
-        GradientDrawable bg = new GradientDrawable();
-        bg.setCornerRadius(a.dp(8));
-        bg.setColor(0x00FFFFFF);
-        k.setBackground(bg);
-        TextView face = a.text(label.length() > 2 ? 13 : 17, Ui.font(a, "medium"), 1f);
-        face.setText(label);
-        face.setGravity(Gravity.CENTER);
-        face.setShadowLayer(0, 0, 0, 0);
-        k.addView(face, a.match());
-        k.setOnFocusChangeListener((v, has) -> {
-            bg.setColor(has ? Color.WHITE : 0x00FFFFFF);
-            face.setTextColor(has ? 0xFF111114 : Color.WHITE);
-            v.animate().scaleX(has ? 1.15f : 1f).scaleY(has ? 1.15f : 1f).setDuration(150).start();
+    /** Use the TV's configured input method, including its own voice and language controls. */
+    void showKeyboard() {
+        queryView.requestFocus();
+        queryView.post(() -> {
+            if (closed || !queryView.isAttachedToWindow()) return;
+            InputMethodManager imm = (InputMethodManager) a.getSystemService(Context.INPUT_METHOD_SERVICE);
+            if (imm != null) imm.showSoftInput(queryView, InputMethodManager.SHOW_IMPLICIT);
         });
-        k.setOnClickListener(v -> click.run());
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(w, a.dp(34));
-        lp.gravity = Gravity.CENTER_VERTICAL;
-        k.setLayoutParams(lp);
-        return k;
     }
 
-    /** Focus stays on the switch just pressed (its label flips to "abc" and back). */
-    void switchMode(int m) {
-        int prev = mode;
-        mode = m;
-        buildKeys(m != 0 ? "abc" : prev == 1 ? "123" : "\u0905\u0906");
-    }
-
-    void type(String s) {
-        if (s.equals(" ") && (query.length() == 0 || query.charAt(query.length() - 1) == ' ')) return;
-        query.append(s);
-        changed();
-    }
-
-    void backspace() {
-        if (query.length() == 0) return;
-        query.setLength(query.length() - 1);
-        changed();
-    }
-
-    void clear() {
-        query.setLength(0);
-        changed();
+    void hideKeyboard() {
+        InputMethodManager imm = (InputMethodManager) a.getSystemService(Context.INPUT_METHOD_SERVICE);
+        if (imm != null) imm.hideSoftInputFromWindow(queryView.getWindowToken(), 0);
     }
 
     void setQuery(String q) {
-        query.setLength(0);
-        query.append(q);
-        changed();
+        queryView.setText(q);
+        queryView.setSelection(queryView.length());
     }
 
     // ---------------------------------------------------------------- dictation
@@ -385,9 +321,8 @@ final class SearchPanel {
                     || error == SpeechRecognizer.ERROR_RECOGNIZER_BUSY))) {
                 prompt();  // the service won't dictate for us: use the TV's voice prompt
             } else if (!wasHeard) {
-                queryView.setText(error == SpeechRecognizer.ERROR_NETWORK || error == SpeechRecognizer.ERROR_NETWORK_TIMEOUT
+                queryView.setHint(error == SpeechRecognizer.ERROR_NETWORK || error == SpeechRecognizer.ERROR_NETWORK_TIMEOUT
                         ? "Voice needs the internet" : "Didn\u2019t catch that \u2014 press the mic to try again");
-                queryView.setAlpha(0.6f);
             }
         }
 
@@ -404,9 +339,7 @@ final class SearchPanel {
     }
 
     void showQuery() {
-        boolean empty = query.length() == 0;
-        queryView.setText(empty ? (listening ? "Listening\u2026" : "Search apps, movies and shows") : query);
-        queryView.setAlpha(empty ? 0.45f : 1f);
+        queryView.setHint(listening ? "Listening\u2026" : "Search apps, movies and shows");
     }
 
     /** Every key press: the local rows at once; titles from the cache, or fetched once typing pauses. */
@@ -432,7 +365,7 @@ final class SearchPanel {
         View focus = a.getCurrentFocus();
         boolean inResults = focus != null && isInside(focus, list);
         list.removeAllViews();
-        titleRow = stremioRow = null;
+        titleRow = null;
         titleStatus = null;
         String q = q();
         if (q.isEmpty()) {
@@ -443,12 +376,8 @@ final class SearchPanel {
             if (q.length() >= 2 && Search.titlesEnabled(a)) {
                 titleRow = addRow("Movies & TV", new ArrayList<>(), a.dp(176));
                 List<Search.Title> hit = cache.get(q.toLowerCase());
-                if (hit != null) fillTitles(hit);
+                if (hit != null || playerCache.containsKey(q.toLowerCase())) fillTitles(hit);
                 else titleStatus(q.equals(failed) ? "Can\u2019t reach the internet" : "Searching\u2026");
-                if (Search.hasStremioApp(a)) {
-                    List<Search.Title> sh = stremioCache.get(q.toLowerCase());
-                    if (sh != null) fillStremio(sh);
-                }
             } else if (local.isEmpty()) {
                 addNote(q.length() < 2 ? "Keep typing to search movies and shows" : "No results");
             }
@@ -457,7 +386,7 @@ final class SearchPanel {
     }
 
     View firstKey() {
-        return keys.getChildAt(0);
+        return queryView;
     }
 
     static boolean isInside(View v, View parent) {
@@ -569,6 +498,7 @@ final class SearchPanel {
     }
 
     void setItems(LinearLayout row, List<View> items) {
+        int focused = row.indexOfChild(a.getCurrentFocus());
         row.removeAllViews();
         for (int i = 0; i < items.size(); i++) {
             View v = items.get(i);
@@ -583,6 +513,7 @@ final class SearchPanel {
             items.get(0).setNextFocusLeftId(items.get(0).getId());
             View last = items.get(items.size() - 1);
             last.setNextFocusRightId(last.getId());
+            if (focused >= 0 && sheet == null) items.get(Math.min(focused, items.size() - 1)).requestFocus();
         }
     }
 
@@ -624,51 +555,54 @@ final class SearchPanel {
                 if (res != null) cache.put(key, res);
                 else failed = q;
                 if (g != gen) return;
-                if (res != null) fillTitles(res);
+                if (res != null || playerCache.containsKey(key)) fillTitles(res);
                 else titleStatus("Can\u2019t reach the internet");
             });
         });
-        if (Search.hasStremioApp(a) && !stremioCache.containsKey(key)) {
+        if (Search.hasStremioApp(a) && !playerCache.containsKey(key)) {
             net.execute(() -> {
-                List<Search.Title> r;
-                try {
-                    r = Search.stremio(a, q);
-                } catch (Exception e) {
-                    return;
-                }
+                List<Search.Title> found;
+                try { found = Search.stremio(a, q); }
+                catch (Exception e) { return; }
                 a.handler.post(() -> {
                     if (closed) return;
-                    stremioCache.put(key, r);
-                    if (g == gen) fillStremio(r);
+                    playerCache.put(key, found);
+                    if (g == gen) fillTitles(cache.get(key));
                 });
             });
         }
     }
 
+    /** Merge player-only titles into the same row and enrich exact matches missing an IMDb ID. */
     void fillTitles(List<Search.Title> ts) {
         if (titleRow == null) return;
-        if (ts.isEmpty()) {
+        List<Search.Title> combined = new ArrayList<>();
+        if (ts != null) combined.addAll(ts);
+        List<Search.Title> extra = playerCache.get(q().toLowerCase());
+        if (extra != null) for (Search.Title playerTitle : extra) {
+            boolean duplicate = false;
+            for (Search.Title known : combined) {
+                boolean sameId = !known.imdb.isEmpty() && known.imdb.equals(playerTitle.imdb);
+                boolean sameTitle = known.imdb.isEmpty() && !known.year.isEmpty() && known.year.equals(playerTitle.year)
+                        && known.type.equals(playerTitle.type) && Search.norm(known.title).equals(Search.norm(playerTitle.title));
+                if (sameId || sameTitle) {
+                    if (sameTitle) {
+                        known.imdb = playerTitle.imdb;
+                        Search.addStremio(a, known);
+                    }
+                    duplicate = true;
+                    break;
+                }
+            }
+            if (!duplicate) combined.add(playerTitle);
+        }
+        if (combined.isEmpty()) {
             titleStatus("No movies or shows found");
             return;
         }
         List<View> cards = new ArrayList<>();
-        for (Search.Title t : ts) cards.add(titleCard(t));
+        for (Search.Title t : combined) cards.add(titleCard(t));
         setItems(titleRow, cards);
-        // Stremio-only titles may have arrived first; drop the ones JustWatch now lists.
-        List<Search.Title> sh = stremioCache.get(q().toLowerCase());
-        if (sh != null) fillStremio(sh);
-    }
-
-    /** Titles only Stremio's catalogue has (JustWatch lists the rest with their services). */
-    void fillStremio(List<Search.Title> ts) {
-        Set<String> listed = new HashSet<>();
-        List<Search.Title> jw = cache.get(q().toLowerCase());
-        if (jw != null) for (Search.Title t : jw) if (!t.imdb.isEmpty()) listed.add(t.imdb);
-        List<View> cards = new ArrayList<>();
-        for (Search.Title t : ts) if (!listed.contains(t.imdb)) cards.add(titleCard(t));
-        if (cards.isEmpty()) return;
-        if (stremioRow == null) stremioRow = addRow("On " + Suggestions.stremioApp(a).name, cards, a.dp(176));
-        else setItems(stremioRow, cards);
     }
 
     // ---------------------------------------------------------------- cards
@@ -831,6 +765,7 @@ final class SearchPanel {
      * the left, and "How to Watch" with one button per app (Open when installed, Get otherwise).
      */
     void showSheet(Search.Title t, View from) {
+        hideKeyboard();
         Search.remember(a, q());
         sheetReturn = from;
         FrameLayout s = new FrameLayout(a);
@@ -884,7 +819,6 @@ final class SearchPanel {
         col.addView(how, hlp);
         List<View> buttons = new ArrayList<>();
         for (Search.Offer o : t.offers) {
-            if (buttons.size() >= 5) break;
             View b = offerButton(t, o);
             LinearLayout.LayoutParams blp = new LinearLayout.LayoutParams(a.dp(380), a.dp(40));
             blp.bottomMargin = a.dp(8);
@@ -893,10 +827,17 @@ final class SearchPanel {
         }
         if (buttons.isEmpty()) {
             TextView none = a.text(14, Ui.font(a, "regular"), 0.7f);
-            none.setText("Not streaming in India right now.");
+            none.setText(t.loadingOffers ? "Finding viewing options\u2026" : t.offersFailed
+                    ? "Couldn\u2019t load viewing options. Check your connection and try again."
+                    : "No viewing options found.");
             col.addView(none);
         }
-        s.addView(col, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        ScrollView details = new ScrollView(a);
+        details.setFillViewport(true);
+        details.setClipChildren(false);
+        details.setClipToPadding(false);
+        details.addView(col);
+        s.addView(details, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         layer.addView(s, a.match());
         sheet = s;
         s.setAlpha(0f);
@@ -980,46 +921,21 @@ final class SearchPanel {
         if (sheet != null) {
             return k == KeyEvent.KEYCODE_DPAD_LEFT || k == KeyEvent.KEYCODE_DPAD_RIGHT;
         }
-        if (k == KeyEvent.KEYCODE_DEL) {
-            if (down) backspace();
-            return true;
-        }
         if (k == KeyEvent.KEYCODE_SEARCH || k == KeyEvent.KEYCODE_VOICE_ASSIST) {
-            if (!down && ev.getRepeatCount() == 0) {
-                if (mic != null) mic.requestFocus();
-                listen();
-            }
+            if (!down && ev.getRepeatCount() == 0) listen();
             return true;
-        }
-        if (down && k != KeyEvent.KEYCODE_DPAD_CENTER && k != KeyEvent.KEYCODE_ENTER) {
-            int ch = ev.getUnicodeChar();
-            if (ch > 0 && !Character.isISOControl(ch)) {  // a hardware keyboard, or the remote's digits
-                type(String.valueOf((char) ch).toLowerCase());
-                return true;
-            }
         }
         View f = a.getCurrentFocus();
-        if (mic != null && k == KeyEvent.KEYCODE_DPAD_UP && f != null && f.getParent() == keys) {
-            if (down) mic.requestFocus();
-            return true;
-        }
-        if (f == mic && mic != null) {
-            if (k == KeyEvent.KEYCODE_DPAD_DOWN) {
-                if (down) firstKey().requestFocus();
-                return true;
-            }
-            if (k == KeyEvent.KEYCODE_DPAD_UP || k == KeyEvent.KEYCODE_DPAD_LEFT || k == KeyEvent.KEYCODE_DPAD_RIGHT) return true;
-        }
-        // Down from the keyboard lands on the first item of the first row, not wherever is nearest.
-        if (k == KeyEvent.KEYCODE_DPAD_DOWN && f != null && f.getParent() == keys) {
+        if (k == KeyEvent.KEYCODE_DPAD_DOWN && f == queryView) {
             if (down) {
+                hideKeyboard();
                 View first = firstResult();
                 if (first != null) first.requestFocus();
             }
             return true;
         }
         if (k == KeyEvent.KEYCODE_DPAD_UP && f != null && isInside(f, list) && f.getParent() == firstRow()) {
-            if (down) firstKey().requestFocus();
+            if (down) queryView.requestFocus();
             return true;
         }
         return false;
@@ -1048,6 +964,7 @@ final class SearchPanel {
     /** Stops work and frees images; the layer itself is removed by MainActivity. */
     void release() {
         closed = true;
+        hideKeyboard();
         if (recognizer != null) {
             recognizer.destroy();
             recognizer = null;

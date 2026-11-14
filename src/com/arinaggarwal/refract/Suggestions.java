@@ -596,7 +596,7 @@ final class Suggestions {
         static String describe(Exception e) {
             if (e instanceof TmdbException) {
                 int c = ((TmdbException) e).code;
-                if (c == 401 || c == 403) return "TMDB didn't accept the saved key. Check it in Settings \u2192 API & Content Services.";
+                if (c == 401 || c == 403) return "TMDB didn't accept the saved key. Check it in Settings \u2192 Content & Search \u2192 API Keys.";
                 if (c == 429) return "TMDB is limiting requests. Try again in a minute.";
                 return "TMDB isn't responding right now (HTTP " + c + ").";
             }

@@ -73,6 +73,7 @@ final class Search {
     static final class Title {
         String title = "", type = "movie", year = "", overview = "", genres = "", poster = "", backdrop = "", imdb = "";
         double rating;
+        boolean loadingOffers, offersFailed;
         /** One offer per app, best first (installed apps, then subscription before rent/buy). */
         List<Offer> offers = new ArrayList<>();
     }
@@ -239,16 +240,17 @@ final class Search {
         return Suggestions.installed(c, Suggestions.STREMIO.pkg) || Suggestions.installed(c, Suggestions.NUVIO.pkg);
     }
 
-    /** "Open in Stremio" (or Nuvio) by IMDb id, after the services, when one of them is installed. */
+    /** Offer each installed player so Nuvio remains available when both apps are present. */
     static void addStremio(Context c, Title t) {
-        if (!hasStremioApp(c)) return;
-        Suggestions.Provider p = Suggestions.stremioApp(c);
-        Offer o = new Offer();
-        o.service = p.name;
-        o.tech = "stremio";
-        o.monetization = "STREMIO";
-        o.pkg = p.pkg;
-        t.offers.add(o);
+        for (Suggestions.Provider p : new Suggestions.Provider[]{Suggestions.STREMIO, Suggestions.NUVIO}) {
+            if (!Suggestions.installed(c, p.pkg)) continue;
+            Offer o = new Offer();
+            o.service = p.name;
+            o.tech = "stremio";
+            o.monetization = "STREMIO";
+            o.pkg = p.pkg;
+            t.offers.add(0, o);
+        }
     }
 
     static String tidyService(String s) {
@@ -373,7 +375,7 @@ final class Search {
             it.type = t.type;
             it.link = t.imdb;
             it.providerId = Suggestions.STREMIO_ID;
-            Suggestions.openStremio(c, it, Suggestions.stremioApp(c));
+            Suggestions.openStremio(c, it, o.pkg.equals(Suggestions.NUVIO.pkg) ? Suggestions.NUVIO : Suggestions.STREMIO);
             return;
         }
         PackageManager pm = c.getPackageManager();

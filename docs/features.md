@@ -71,7 +71,7 @@ screen. The initial updater version must first be installed using ADB.
 | Dock | Up | Carousel |
 | Carousel | Left / Right | Previous / next item (wraps around) |
 | Carousel (Continue Watching item) | Right | Moves from **Resume** to **Remove** |
-| Status row | Left / Right | Weather ⇄ Assistant ⇄ Movies ⇄ Search ⇄ Refract Settings ⇄ Control Center ⇄ avatar |
+| Status row | Left / Right | Weather ⇄ Movies ⇄ Search ⇄ Refract Settings ⇄ Control Center ⇄ avatar |
 | Anywhere on Home | Hold Back for 1 second | Opens Search (a short press of Back works as before) |
 | Anywhere on Home (and the idle screen) | Voice / mic / Search key on the remote | The voice flow: edge glow, then the TV's assistant, else Search with dictation. Many TVs give `ASSIST`/`VOICE_ASSIST` straight to Google Assistant before any app sees it |
 | Now Playing pill | OK | Back to the app that is playing |
@@ -97,28 +97,20 @@ bright artwork and lightens over dark artwork, so white text stays legible.
 
 ## Search
 
-The magnifier next to Control Center opens Search over the blurred Home Screen, as on tvOS: what
-you typed at the top, a one-row keyboard under it, results below. Shortcuts: **hold Back** on any
-remote, the Search key on remotes that have one, or just start typing on a keyboard. (The
-Assistant/mic button on most Android TV remotes is taken by Google Assistant before any app sees
-it, so it can't open Refract's Search.)
+The Search button opens results over the Home Screen. The search field uses the TV's selected
+system keyboard, including its language and voice input controls. A USB/Bluetooth keyboard also
+works. Hold Back on Home to open Search; press Back to return.
 
-- **Keyboard**: a–z, space, delete, **123** (digits and punctuation), **अआ** (Hindi letters) and
-  clear. A USB/Bluetooth keyboard and the remote's number keys type too.
-- **Dictation**: the **mic** beside the search field (Up from the keyboard), or the remote's
-  search/mic button on Home or in Search. Where the TV has Google's voice service, the words appear
-  in the field as you speak and results follow; the microphone is asked for on screen the first
-  time. Esc on a keyboard, or Back, closes Search. Without that permission or service, the TV's own voice prompt (Google's) listens instead.
-  English and Hindi (Indian English, with Hindi as a second language).
+- **Voice**: use the keyboard's microphone where supported, or the mic beside the search field.
+  Voice capabilities depend on the TV's installed keyboard and speech service.
 - **Before typing**: your recent searches (per profile) and what's trending in the carousel.
 - **Apps & Settings** (instant, no internet): installed apps including hidden ones, TV inputs
   ("HDMI 2"), Refract screens (Control Center, Weather, Switch Profile, Refract Settings) and TV settings
   ("wifi", "bluetooth", "screensaver"…).
 - **Movies & TV**: every title on any streaming service in India from JustWatch — Hindi and
   regional titles included, and searches typed in Hindi (पंचायत) work — as posters with the logos
-  of the services that have each one. With Stremio or Nuvio installed, **On Stremio** adds titles
-  only Stremio's catalogue has. Titles are searched once typing pauses; repeat searches are
-  instant.
+  of the services that have each one. With Stremio or Nuvio installed, additional catalogue
+  titles appear in the same Movies & TV row. Titles are searched once typing pauses; repeat searches are instant.
 - **How to Watch**: OK on a poster opens the title's page (artwork, year, genres, IMDb rating,
   summary) with a button per app: **▶ Open in …** for apps you have (straight to the title where
   the app allows it) and **Get …** for the rest (the app's Play Store page), each marked
@@ -126,7 +118,7 @@ it, so it can't open Refract's Search.)
 - **Any service, no list**: Refract matches each service to its app itself — the app named in the
   service's Android TV link, an installed app that opens the service's website, or an installed
   app with the same name — so new services work without an update.
-- Settings → Home → Search: turn Movies & TV results off, or clear recent searches. Searches go
+- Settings → Content & Search: turn Movies & TV results off, or clear recent searches. Searches go
   only to JustWatch (and Stremio's catalogue when Stremio/Nuvio is installed); nothing is logged.
 
 | | |
@@ -262,9 +254,10 @@ Back, at 60% of the normal level. Settings → Home → Navigation sounds.
 
 ## Settings
 
-Opened from the gear in the top status row or Control Center. A main list opens a page per section (Back returns):
-Profiles, Top Shelf, Presentation, Inputs, Weather, Continue Watching, Home, Permissions, About, and
-the TV's own settings.
+Opened from the gear in the top status row or Control Center. The main list groups related
+controls under **Home & Appearance**, **Content & Search**, and **Device & App**, with direct
+access to **Weather**, **Profiles**, and **Presentation**. Existing controls and profile choices
+remain available. Press Back to return to the previous group.
 
 | | |
 |---|---|
@@ -302,7 +295,7 @@ shadow. Dark is the original smoked glass. Home, Control Center, Setup, Settings
 and Refract Ambient all read the same tokens (`Theme.java`). Search and its How to Watch sheet are
 still dark in both modes.
 
-## Backgrounds (Pexels photographs)
+## Backgrounds
 
 53 photographs in 9 categories (Landscapes, Deserts, Oceans, Forests, Cities, Minimal, Abstract,
 Night, Cinematic), each tagged as suited to Light or Dark, replace the preset gradients. Existing
@@ -310,7 +303,14 @@ profiles that chose a gradient keep it. The photo appears **only behind the app 
 moves from the dock row down into the grid, in the More Apps folder, or when the carousel is
 empty. The carousel above the dock is untouched. A legibility veil matching the appearance is baked
 into the photo once. Choose one in setup or under Settings → Home → Background, where moving
-through the list previews the photo. Every photo is credited on screen and in Attributions.
+through the list previews the photo. Credits are available in Attributions.
+
+- **Wikimedia photo of the day** is a free featured image with no API key. Its creator, source
+  page and license are in Background → Photo credit and Attributions. The last downloaded photo
+  remains available offline; the app checks for a new one while Home is active.
+- **Change background** can keep one photo or rotate every 30 minutes, hour, 6 hours or day.
+  **Rotate through** chooses all photos or the current category. Each profile keeps its own
+  selection and interval; rotation waits while the Movies Home Theme is showing movie artwork.
 
 - **Downloaded on the TV, not shipped in the app.** The APK carries only titles and credits; each
   photo downloads from Pexels' image CDN (no key needed) the first time it is shown or previewed.
@@ -328,8 +328,8 @@ through the list previews the photo. Every photo is credited on screen and in At
 The film icon in the status pill opens **Movies**: a featured backdrop with the film's title logo
 (or its title in type when TMDB has none), TMDB rating, release date, genres, runtime and overview,
 and rows of posters (Trending, Popular, Top Rated, Coming Soon, Action, Comedy, Science Fiction,
-Animation). The featured film changes 300 ms after you stop moving. OK looks the film up in
-Search, which lists the apps that have it.
+Animation). The featured film changes 300 ms after you stop moving. OK opens the film's viewing
+options directly, including Nuvio and available streaming services.
 
 **Movies Home Theme** (setup, or Settings → Movies) puts the same featured films behind Home:
 full-screen backdrop, logo, overview, rating and date above the dock. News and recommendations are
@@ -351,12 +351,10 @@ spacing, nudge, 12/24-hour, seconds and date. It is also a real
 DreamService, so it can be the TV's own screensaver (TV Settings → Screen saver → *Refract
 Ambient*).
 
-## Status pill, Assistant and Control Center
+## Status pill and Control Center
 
-The status row is a single floating glass pill: connection, time, voice (Google Assistant), Movies,
-Search, Refract Settings, Control Center and the profile avatar. The voice button plays a short edge glow, then
-opens the TV's assistant (`ASSIST`, then `VOICE_ASSIST`, web search, global search), falling back
-to Refract's Search with dictation. Nothing listens until you press it.
+The status row is a single floating glass pill: connection, time, Movies, Search, Refract Settings,
+Control Center and the profile avatar. Voice input is available through Search where the TV supports it.
 
 Control Center is one tinted glass panel: a large **Power Off** tile, **Wi-Fi** and **Do Not
 Disturb**, **Audio** and **Sleep Timer**, **Memory** (OK cleans), and round shortcuts for
@@ -379,12 +377,12 @@ and white glass in Light. OK opens the playing app; it hides 8 seconds after pla
 
 ## API & Content Services
 
-Optional keys, offered in setup (skippable) and in Settings → API & Content Services: TMDB (v3 key
-or v4 token) and Pexels. Keys are typed hidden (Show reveals them), stored encrypted with an
+Optional keys, offered in setup (skippable) and in Settings → Content & Search → API Keys: TMDB (v3 key
+or v4 token). Previously saved Pexels keys are kept; the Wikimedia photo of the day needs no key. Keys are typed hidden (Show reveals them), stored encrypted with an
 Android Keystore AES-GCM key, and only ever shown masked. TMDB can be tested. Its status is one of
 not configured, unverified, valid, invalid, rate-limited, network error or service unavailable, and
 an outage is never reported as a bad key. The Pexels API is paused, so a Pexels key is saved but not
-checked or used, and no Pexels requests are made.
+checked or used, and no Pexels API requests are made. Existing built-in photographs still use the Pexels image CDN.
 
 ## Attributions
 

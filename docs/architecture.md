@@ -94,7 +94,7 @@ install, so settings from Hume are not carried over).
 |---|---|
 | `Theme.java` | Light / Dark colour tokens shared by every surface |
 | `Secrets.java` | API keys: Keystore AES-GCM (`refract_api_keys`), masked display, per-key status |
-| `Wallpapers.java` + `assets/wallpapers/` | Bundled Pexels photos (`index.json` metadata and credits), category lookup, sized decoding; the dormant Pexels API path is gated by `PEXELS_API_PAUSED` |
+| `Wallpapers.java`, `CommonsPhotos.java` + `assets/wallpapers/` | Existing Pexels photo metadata, per-profile background rotation, and a cached, credited Wikimedia featured photo with no key; the dormant Pexels API path is gated by `PEXELS_API_PAUSED` |
 | `Movies.java` | TMDB collections, logo and runtime lookups, disk caches; shared by Home theme, Movies tab and Ambient |
 | `MoviesPanel.java` | The Movies tab overlay |
 | `ClockView.java` | One clock for every style |

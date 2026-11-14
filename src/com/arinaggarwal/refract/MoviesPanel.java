@@ -29,7 +29,7 @@ import java.util.concurrent.Executors;
  * type), TMDB rating, release date, genres, runtime and overview, and rows of posters under it
  * (Trending, Popular, Top Rated, Coming Soon and a few genres). Moving across the posters changes
  * the featured film after a short pause, so scrolling quickly doesn't fetch every backdrop. OK
- * looks the film up in Search, which lists the apps that have it.
+ * opens its viewing options directly, with title matching by IMDb ID.
  *
  * It shares the Movies Home Theme's model and caches (Movies, Suggestions.image), keeps one
  * backdrop decoded at a time, caps posters at 1/14 of the heap and stops all work when closed.
@@ -44,7 +44,8 @@ final class MoviesPanel {
     final TextView title, meta, overview;
     final LinearLayout rows;
     final ScrollView scroll;
-    final ExecutorService net = Executors.newSingleThreadExecutor(), img = Executors.newFixedThreadPool(2);
+    final ExecutorService net = Executors.newSingleThreadExecutor(), img = Executors.newFixedThreadPool(2),
+            detailsNet = Executors.newSingleThreadExecutor();
     final LruCache<String, Bitmap> posters = new LruCache<String, Bitmap>((int) (Runtime.getRuntime().maxMemory() / 14)) {
         @Override protected int sizeOf(String k, Bitmap b) {
             return b.getByteCount();
@@ -55,6 +56,8 @@ final class MoviesPanel {
     int gen;
     boolean closed;
     View firstCard;
+    SearchPanel details;
+    int detailsGen;
 
     final Runnable feature = () -> {
         if (pending != null) feature(pending);
@@ -136,7 +139,7 @@ final class MoviesPanel {
     /** Without a TMDB key there is nothing to show: say so, and offer the place to add one. */
     void noKey() {
         title.setText("Movies need a TMDB key");
-        overview.setText("Add your free TMDB API key in Settings \u2192 API & Content Services to see trending, "
+        overview.setText("Add your free TMDB API key in Settings \u2192 Content & Search \u2192 API Keys to see trending, "
                 + "popular and upcoming movies with their artwork, ratings and release dates.");
         TextView open = a.text(14, Ui.font(a, "semibold"), 1f);
         open.setText("Open Settings");
@@ -271,11 +274,71 @@ final class MoviesPanel {
                 a.handler.postDelayed(feature, FEATURE_DELAY_MS);
             }
         });
-        c.setOnClickListener(v -> {
-            a.closeMovies();
-            a.showSearch(it.title);
-        });
+        c.setOnClickListener(v -> showOptions(it, v));
         return c;
+    }
+
+    /** Show the selected TMDB movie immediately, then resolve its exact viewing options. */
+    void showOptions(Suggestions.Item item, View from) {
+        if (details != null) return;
+        SearchPanel panel = new SearchPanel(a);
+        details = panel;
+        layer.addView(panel.layer, a.match());
+        Search.Title initial = movieTitle(item);
+        initial.loadingOffers = true;
+        panel.showSheet(initial, from);
+        int request = ++detailsGen;
+        detailsNet.execute(() -> {
+            Search.Title result = movieTitle(item);
+            boolean failed = false;
+            try {
+                String imdb = Suggestions.get(a, "/movie/" + item.id + "/external_ids").optString("imdb_id", "");
+                if (imdb.matches("tt[0-9]+")) result.imdb = imdb;
+            } catch (Exception e) {
+                failed = true;
+            }
+            try {
+                for (Search.Title candidate : Search.titles(a, item.title, panel.apps)) {
+                    if (!result.imdb.isEmpty() && result.imdb.equals(candidate.imdb) && candidate.type.equals("movie")) {
+                        result.offers = candidate.offers;
+                        failed = false;
+                        break;
+                    }
+                }
+            } catch (Exception e) {
+                failed = true;
+            }
+            if (result.offers.isEmpty() && !result.imdb.isEmpty()) Search.addStremio(a, result);
+            result.offersFailed = failed && result.offers.isEmpty();
+            a.handler.post(() -> {
+                if (closed || details != panel || detailsGen != request) return;
+                if (panel.sheet != null) panel.layer.removeView(panel.sheet);
+                panel.sheet = null;
+                panel.showSheet(result, from);
+            });
+        });
+    }
+
+    Search.Title movieTitle(Suggestions.Item item) {
+        Search.Title t = new Search.Title();
+        t.title = item.title;
+        t.type = item.type;
+        t.year = item.year;
+        t.overview = item.overview;
+        t.genres = item.genres;
+        t.backdrop = item.backdrop == null ? "" : item.backdrop;
+        t.poster = item.poster == null ? "" : item.poster;
+        return t;
+    }
+
+    void closeDetails() {
+        if (details == null) return;
+        SearchPanel old = details;
+        details = null;
+        detailsGen++;
+        old.release();
+        layer.removeView(old.layer);
+        if (old.sheetReturn != null && old.sheetReturn.isAttachedToWindow()) old.sheetReturn.requestFocus();
     }
 
     void poster(ImageView iv, String path, int width, View fallback) {
@@ -346,6 +409,13 @@ final class MoviesPanel {
 
     boolean dispatch(KeyEvent ev) {
         int k = ev.getKeyCode();
+        if (details != null) {
+            if (k == KeyEvent.KEYCODE_BACK || k == KeyEvent.KEYCODE_ESCAPE) {
+                if (ev.getAction() == KeyEvent.ACTION_UP) closeDetails();
+                return true;
+            }
+            return details.dispatch(ev);
+        }
         if (k == KeyEvent.KEYCODE_BACK || k == KeyEvent.KEYCODE_ESCAPE) {
             if (ev.getAction() == KeyEvent.ACTION_UP) a.closeMovies();
             return true;
@@ -362,8 +432,10 @@ final class MoviesPanel {
     /** Stops work and frees images; the layer itself is removed by MainActivity. */
     void release() {
         closed = true;
+        closeDetails();
         a.handler.removeCallbacks(feature);
         net.shutdownNow();
+        detailsNet.shutdownNow();
         img.shutdownNow();
         posters.evictAll();
         backdrop.setImageDrawable(null);
