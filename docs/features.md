@@ -58,6 +58,11 @@ screen. The initial updater version must first be installed using ADB.
   **Show on Home Screen** brings them back. Each profile keeps its own choices.
 - **Device Settings** appears on Home by default and opens the TV's own Settings app. It can be
   moved or hidden like other apps; Refract Settings remains available in the status row.
+- **App images**: hold OK on an app and select **Change Image**. Keep the instructions open
+  while you run the displayed `adb -s TV_SERIAL push` command from your computer; replace the
+  serial and source image path. Refract stores a private copy shared across profiles. Select
+  **Return to Default Image** to restore the app's usual card. Xtra TV also includes a Refract
+  design, which can be restored with **Use Xtra Image**. App updates do not replace these images.
 - **System apps** (Settings, Play Store…) get tvOS-style cards: a gradient with a white glyph.
 - **Background**: Aurora, Midnight, Sunset, Ocean or Graphite (per profile).
 

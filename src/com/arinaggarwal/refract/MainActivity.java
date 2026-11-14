@@ -75,6 +75,7 @@ import java.util.Set;
 public class MainActivity extends Activity {
 
     static final int COLS = 6;
+    android.os.FileObserver artworkObserver;
     static final String SETTINGS_KEY = "special:settings";
     static final String PRESENT_KEY = "special:present";
     static final String INPUTS_KEY = "special:inputs";
@@ -484,6 +485,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        if (artworkObserver != null) artworkObserver.stopWatching();
         photoFetch.shutdownNow();
         npIo.shutdownNow();
         if (pkgReceiver != null) unregisterReceiver(pkgReceiver);
@@ -3197,7 +3199,10 @@ public class MainActivity extends Activity {
         inputs = Inputs.list(this);
         if (Inputs.showCard(this) && !inputs.isEmpty()) addInputsEntry();
         for (AppEntry e : all.values()) {
-            if (e.banner == null || isSettings(e) || TVOS_CARD_PKGS.contains(e.pkg)) {
+            Drawable custom = AppArtwork.load(this, e.pkg);
+            if (custom != null && !e.pkg.equals(getPackageName())) {
+                e.banner = custom;
+            } else if (e.banner == null || isSettings(e) || TVOS_CARD_PKGS.contains(e.pkg)) {
                 e.banner = new BitmapDrawable(getResources(), tvosCard(e));
             }
         }
@@ -3510,6 +3515,18 @@ public class MainActivity extends Activity {
             labels.add("Move to More Apps");
             actions.add(() -> setHidden(a, true));
         }
+        if (a.pkg != null && !a.pkg.equals(getPackageName())) {
+            labels.add("Change Image");
+            actions.add(() -> chooseAppArtwork(a));
+            if (AppArtwork.active(this, a.pkg)) {
+                labels.add("Return to Default Image");
+                actions.add(() -> { AppArtwork.useOriginal(this, a.pkg); reload(a.key); });
+            }
+            if (AppArtwork.canUseBuiltIn(this, a.pkg)) {
+                labels.add("Use Xtra Image");
+                actions.add(() -> { AppArtwork.useBuiltIn(this, a.pkg); reload(a.key); });
+            }
+        }
         if (!isSettings(a) && !INPUTS_KEY.equals(a.key) && !PRESENT_KEY.equals(a.key)) {
             labels.add("Move to Folder");
             actions.add(() -> chooseFolder(tile, a));
@@ -3529,6 +3546,52 @@ public class MainActivity extends Activity {
             });
         }
         showMenu(tile, a.label, labels, actions, labels.indexOf("Uninstall"));
+    }
+
+    /** Watch only while the instructions are open; copy completed transfers into private storage. */
+    void chooseAppArtwork(AppEntry app) {
+        java.io.File dir = getExternalFilesDir("app-art-import");
+        if (dir == null || (!dir.isDirectory() && !dir.mkdirs()) || !app.pkg.matches("[A-Za-z0-9_.]+")) {
+            toast("Image transfer storage is unavailable.");
+            return;
+        }
+        java.io.File incoming = new java.io.File(dir, app.pkg + ".image");
+        String instructions = "Keep this screen open and run this command on your computer. "
+                + "Replace TV_SERIAL and the image path with your own:\n\n"
+                + "adb -s TV_SERIAL push \"/path/to/image.jpg\" \"" + incoming.getAbsolutePath() + "\""
+                + "\n\nRefract will apply the image automatically. JPG and PNG images up to 16 MB are supported.";
+        java.util.concurrent.atomic.AtomicBoolean busy = new java.util.concurrent.atomic.AtomicBoolean();
+        AlertDialog dialog = new AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+                .setTitle("Change Image: " + app.label).setMessage(instructions)
+                .setNegativeButton("Cancel", (d, which) -> { }).create();
+        android.os.FileObserver observer = new android.os.FileObserver(dir.getAbsolutePath(),
+                android.os.FileObserver.CLOSE_WRITE | android.os.FileObserver.MOVED_TO) {
+            @Override public void onEvent(int event, String path) {
+                if (!incoming.getName().equals(path) || !busy.compareAndSet(false, true)) return;
+                io.execute(() -> {
+                    boolean saved = AppArtwork.importFile(getApplicationContext(), app.pkg, incoming);
+                    handler.post(() -> {
+                        busy.set(false);
+                        if (isFinishing() || isDestroyed()) return;
+                        if (saved) {
+                            dialog.dismiss();
+                            reload(app.key);
+                            toast("App image updated");
+                        } else if (dialog.isShowing()) {
+                            toast("Couldn't use that image. Send a JPG or PNG under 16 MB.");
+                        }
+                    });
+                });
+            }
+        };
+        if (artworkObserver != null) artworkObserver.stopWatching();
+        artworkObserver = observer;
+        dialog.setOnDismissListener(d -> {
+            observer.stopWatching();
+            if (artworkObserver == observer) artworkObserver = null;
+        });
+        observer.startWatching();
+        dialog.show();
     }
 
     // ---------------------------------------------------------------- Control Center
