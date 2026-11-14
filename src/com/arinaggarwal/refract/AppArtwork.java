@@ -18,7 +18,7 @@ import java.util.Locale;
 final class AppArtwork {
     private AppArtwork() { }
     static final String XTRA = "com.github.razenfr.xtratv";
-    private static final String PREFS = "app_artwork", CUSTOM = "custom", ORIGINAL = "original", BUILT_IN = "built_in";
+    private static final String PREFS = "app_artwork", CUSTOM = "custom", ORIGINAL = "original";
     private static final long MAX_INPUT = 16L * 1024 * 1024;
     private static final int MAX_EDGE = 1024;
 
@@ -57,12 +57,26 @@ final class AppArtwork {
         return CUSTOM.equals(mode) || XTRA.equals(pkg) && !ORIGINAL.equals(mode);
     }
 
-    static boolean canUseBuiltIn(Context c, String pkg) {
-        return XTRA.equals(pkg) && (ORIGINAL.equals(mode(c, pkg)) || CUSTOM.equals(mode(c, pkg)));
+    /** Restore the app's own image and remove the saved and transferred custom copies. */
+    static boolean useOriginal(Context c, String pkg) {
+        prefs(c).edit().putString(key(pkg), ORIGINAL).apply();
+        boolean deleted = true;
+        try {
+            File saved = file(c, pkg);
+            new AtomicFile(saved).delete();
+            deleted = !saved.exists();
+            File dir = c.getExternalFilesDir("app-art-import");
+            if (dir != null && pkg.matches("[A-Za-z0-9_.]+")) {
+                File incoming = new File(dir, pkg + ".image");
+                if (incoming.exists() && !incoming.delete()) deleted = false;
+            } else if (dir == null) {
+                deleted = false;
+            }
+        } catch (Exception e) {
+            deleted = false;
+        }
+        return deleted;
     }
-
-    static void useOriginal(Context c, String pkg) { prefs(c).edit().putString(key(pkg), ORIGINAL).apply(); }
-    static void useBuiltIn(Context c, String pkg) { prefs(c).edit().putString(key(pkg), BUILT_IN).apply(); }
 
     /** Copy and downsample outside the UI thread; an invalid image never replaces working artwork. */
     static boolean importFile(Context c, String pkg, File source) {

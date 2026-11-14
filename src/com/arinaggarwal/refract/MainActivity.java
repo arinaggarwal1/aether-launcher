@@ -75,7 +75,7 @@ import java.util.Set;
 public class MainActivity extends Activity {
 
     static final int COLS = 6;
-    android.os.FileObserver artworkObserver;
+    ArtworkServer artworkServer;
     static final String SETTINGS_KEY = "special:settings";
     static final String PRESENT_KEY = "special:present";
     static final String INPUTS_KEY = "special:inputs";
@@ -485,7 +485,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (artworkObserver != null) artworkObserver.stopWatching();
+        if (artworkServer != null) artworkServer.close();
         photoFetch.shutdownNow();
         npIo.shutdownNow();
         if (pkgReceiver != null) unregisterReceiver(pkgReceiver);
@@ -3520,11 +3520,11 @@ public class MainActivity extends Activity {
             actions.add(() -> chooseAppArtwork(a));
             if (AppArtwork.active(this, a.pkg)) {
                 labels.add("Return to Default Image");
-                actions.add(() -> { AppArtwork.useOriginal(this, a.pkg); reload(a.key); });
-            }
-            if (AppArtwork.canUseBuiltIn(this, a.pkg)) {
-                labels.add("Use Xtra Image");
-                actions.add(() -> { AppArtwork.useBuiltIn(this, a.pkg); reload(a.key); });
+                actions.add(() -> {
+                    boolean deleted = AppArtwork.useOriginal(this, a.pkg);
+                    reload(a.key);
+                    if (!deleted) toast("Default image restored, but a saved copy could not be removed.");
+                });
             }
         }
         if (!isSettings(a) && !INPUTS_KEY.equals(a.key) && !PRESENT_KEY.equals(a.key)) {
@@ -3548,50 +3548,47 @@ public class MainActivity extends Activity {
         showMenu(tile, a.label, labels, actions, labels.indexOf("Uninstall"));
     }
 
-    /** Watch only while the instructions are open; copy completed transfers into private storage. */
+    /** Host a one-use image picker only while the TV prompt is open. */
     void chooseAppArtwork(AppEntry app) {
-        java.io.File dir = getExternalFilesDir("app-art-import");
-        if (dir == null || (!dir.isDirectory() && !dir.mkdirs()) || !app.pkg.matches("[A-Za-z0-9_.]+")) {
-            toast("Image transfer storage is unavailable.");
-            return;
-        }
-        java.io.File incoming = new java.io.File(dir, app.pkg + ".image");
-        String instructions = "Keep this screen open and run this command on your computer. "
-                + "Replace TV_SERIAL and the image path with your own:\n\n"
-                + "adb -s TV_SERIAL push \"/path/to/image.jpg\" \"" + incoming.getAbsolutePath() + "\""
-                + "\n\nRefract will apply the image automatically. JPG and PNG images up to 16 MB are supported.";
-        java.util.concurrent.atomic.AtomicBoolean busy = new java.util.concurrent.atomic.AtomicBoolean();
-        AlertDialog dialog = new AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
-                .setTitle("Change Image: " + app.label).setMessage(instructions)
-                .setNegativeButton("Cancel", (d, which) -> { }).create();
-        android.os.FileObserver observer = new android.os.FileObserver(dir.getAbsolutePath(),
-                android.os.FileObserver.CLOSE_WRITE | android.os.FileObserver.MOVED_TO) {
-            @Override public void onEvent(int event, String path) {
-                if (!incoming.getName().equals(path) || !busy.compareAndSet(false, true)) return;
-                io.execute(() -> {
-                    boolean saved = AppArtwork.importFile(getApplicationContext(), app.pkg, incoming);
-                    handler.post(() -> {
-                        busy.set(false);
-                        if (isFinishing() || isDestroyed()) return;
-                        if (saved) {
-                            dialog.dismiss();
-                            reload(app.key);
-                            toast("App image updated");
-                        } else if (dialog.isShowing()) {
-                            toast("Couldn't use that image. Send a JPG or PNG under 16 MB.");
-                        }
-                    });
-                });
+        try {
+            byte[] page;
+            try (java.io.InputStream in = getAssets().open("app-art/upload.html");
+                 java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream()) {
+                byte[] buf = new byte[4096];
+                for (int n; (n = in.read(buf)) != -1;) out.write(buf, 0, n);
+                page = out.toByteArray();
             }
-        };
-        if (artworkObserver != null) artworkObserver.stopWatching();
-        artworkObserver = observer;
-        dialog.setOnDismissListener(d -> {
-            observer.stopWatching();
-            if (artworkObserver == observer) artworkObserver = null;
-        });
-        observer.startWatching();
-        dialog.show();
+            final AlertDialog[] dialog = new AlertDialog[1];
+            ArtworkServer server = new ArtworkServer(getCacheDir(), page,
+                    file -> AppArtwork.importFile(getApplicationContext(), app.pkg, file),
+                    () -> handler.post(() -> {
+                        if (isFinishing() || isDestroyed()) return;
+                        if (dialog[0] != null) dialog[0].dismiss();
+                        reload(app.key);
+                        toast("App image updated");
+                    }));
+            String url = server.url();
+            if (url == null) {
+                server.close();
+                toast("Connect the TV to your home network to change an image.");
+                return;
+            }
+            if (artworkServer != null) artworkServer.close();
+            artworkServer = server;
+            dialog[0] = new AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+                    .setTitle("Change Image: " + app.label)
+                    .setMessage("On a phone or computer connected to the same network, open:\n\n" + url
+                            + "\n\nChoose an image and select Send to TV. Keep this screen open until it arrives.")
+                    .setNegativeButton("Cancel", (d, which) -> { }).create();
+            dialog[0].setOnDismissListener(d -> {
+                server.close();
+                if (artworkServer == server) artworkServer = null;
+            });
+            server.start();
+            dialog[0].show();
+        } catch (java.io.IOException | SecurityException e) {
+            toast("Couldn't start image sharing. Check your network and try again.");
+        }
     }
 
     // ---------------------------------------------------------------- Control Center
