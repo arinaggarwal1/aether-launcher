@@ -1,0 +1,10 @@
+{
+  "applicationId": "com.arinaggarwal.refract",
+  "label": "Refract Custom",
+  "repository": "arinaggarwal1/refract-launcher",
+  "keyAlias": "refract-custom",
+  "buildTools": "36.0.0",
+  "compileSdk": 35,
+  "minSdk": 24,
+  "targetSdk": 34
+}

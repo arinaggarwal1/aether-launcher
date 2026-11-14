@@ -23,8 +23,8 @@ covers how to work on it; to set up your machine first, see
 ```
 AndroidManifest.xml      package com.hydrainnit.refract, activities/services/receivers
 build.sh                 the whole build (aapt2 → javac → d8 → zipalign → apksigner)
-src/com/hydrainnit/refract/   the launcher (≈9,400 lines of Java)
-src/com/hydrainnit/refract/present/   Presentation mode: HTTP server, player, storage
+src/com/arinaggarwal/refract/   the launcher (≈9,400 lines of Java)
+src/com/arinaggarwal/refract/present/   Presentation mode: HTTP server, player, storage
 src/io/nayuki/qrcodegen/ vendored QR encoder (MIT)
 res/                     manifest resources: icons, device-admin and accessibility XML, strings
 assets/fonts/            Inter (OFL)
@@ -65,8 +65,8 @@ Weather: retry the next source when one times out
 - Tested on Mi Box (Android 12): pulled the network for 30 s, pill recovered.
 ```
 
-- Bump the version only in release builds (`VERSION_CODE`/`VERSION_NAME` on the `build.sh` command
-  line), not in source.
+- Version codes are reserved automatically in GitHub by every build. Use `./build.sh --name <name>`
+  only to customize the display version. Preserve the signing key and public certificate pin.
 
 ## 3. Code style
 
@@ -194,12 +194,7 @@ Third-party code and assets already here: **Inter** font (SIL Open Font License,
 
 ### Signing
 
-Development builds are signed with a local `debug.keystore` that `build.sh` creates on first use; it
-is ignored by git. **Release builds are signed by maintainers only**, with the private key kept in
-a separate private repository (never in this one):
-
-```sh
-RELEASE_KEYSTORE=/path/to/hume-release.jks RELEASE_KEYSTORE_PASS=... VERSION_CODE=.. VERSION_NAME=.. ./build.sh
-```
-
-A debug build can't update a release install (different key): uninstall first.
+All builds of this custom fork use the permanent private signing key outside Git and the public
+fingerprint in `config/signing-cert.sha256`. Run `./build.sh`; never create a new signing key to
+resolve an update failure. Local and GitHub builds share the same identity and remote version
+counter. See [Custom updates](docs/custom-updates.md) for key backup, Actions, and safe migration.

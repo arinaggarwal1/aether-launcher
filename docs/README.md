@@ -1,6 +1,6 @@
 # Refract Launcher documentation
 
-Refract Launcher (`com.hydrainnit.refract`) replaces the Android TV home screen with one modelled on
+Refract Launcher (`com.arinaggarwal.refract`) replaces the Android TV home screen with one modelled on
 Apple tvOS 26. Every element was measured against Apple's own tvOS 26 screenshots and the Human
 Interface Guidelines, then tuned to run at 60 fps on a low-end Mali-450 GPU.
 

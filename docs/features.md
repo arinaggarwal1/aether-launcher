@@ -42,6 +42,11 @@ Settings → Home → **Run setup again** repeats it. If Home is pressed mid-way
 - **Focus**: the card lifts to 1.2× with a soft shadow and a glare sweep; OK dips the card (the
   HIG's pressed state) and zooms it to full screen while the app opens.
 - **Names** appear under focused cards below the dock (none inside the dock, as on tvOS).
+- **Folders**: hold OK on an app, choose **Move to Folder**, then **New Folder** or an existing
+  folder. New folders take the app's place on Home and preview up to nine app cards. Hold OK on a
+  folder to move, rename, or remove it; removing returns its apps to Home. Inside a folder,
+  **Show on Home Screen** moves an app out. The last app leaving removes the empty folder.
+  Folders are saved per profile and work with the existing Back/Home navigation.
 - **More Apps**: hidden apps live in a folder card at the end of the grid.
 - **System apps** (Settings, Play Store…) get tvOS-style cards: a gradient with a white glyph.
 - **Background**: Aurora, Midnight, Sunset, Ocean or Graphite (per profile).
@@ -51,7 +56,7 @@ Settings → Home → **Run setup again** repeats it. If Home is pressed mid-way
 | Where | Key | Action |
 |---|---|---|
 | Any card | OK | Open (zoom animation) |
-| Any card | Hold OK / Menu | Options: Open, Move, Hide, App Info, Uninstall, Reset Layout |
+| Any card | Hold OK / Menu | Options: Open, Move, Hide, Move to Folder, App Info, Uninstall, Reset Layout |
 | Move mode | Arrows / OK | Move the wiggling card / finish |
 | Dock | Up | Carousel |
 | Carousel | Left / Right | Previous / next item (wraps around) |

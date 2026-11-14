@@ -1,3 +1,6 @@
+> For this personal Fire TV fork, follow **[Custom updates and safe migration](custom-updates.md)**.
+> Keep the original `com.hydrainnit.refract` installed as your fallback.
+
 # Install and set up
 
 ## Requirements
@@ -10,28 +13,19 @@
 ## Build
 
 ```sh
-./build.sh                        # uses JDK 17 and Android build-tools 34
-VERSION_CODE=62 VERSION_NAME=6.9 ./build.sh
+./build.sh
+./build.sh --name 1.0.0-custom.1     # optional display version
 ```
 
-The script compiles resources (`aapt2`), Java (`javac`), dexes (`d8`), aligns and signs. Development
-builds use a local debug key; official releases are signed by the maintainers with a private key.
-Android only installs updates signed with the same key, so switching between a release and a
-development build needs an uninstall first.
+Every build uses the same permanent custom key and reserves an increasing versionCode.
+See [Custom updates](custom-updates.md) for tool setup, signing-key recovery and GitHub releases.
 
 ## Install and make it the home screen
 
-```sh
-TV=192.168.1.13:5555
-adb connect $TV
-adb -s $TV install -r build/refract-launcher.apk
-
-# Android TV keeps its own launcher in front unless it is disabled:
-adb -s $TV shell pm disable-user --user 0 com.google.android.tvlauncher
-adb -s $TV shell pm set-home-activity com.hydrainnit.refract/.MainActivity
-```
-
-Press Home on the remote — Refract Launcher opens.
+On your rooted Fire TV Cube, use the **[one-time migration procedure](custom-updates.md#one-time-migration-on-your-rooted-cube)**.
+It backs up the working original, installs the custom package alongside it, copies settings before
+first launch, and switches Home only when you explicitly choose. Do not change Amazon component
+states again. Future updates are simply `adb -s TV_IP:5555 install -r build/refract-custom.apk`.
 
 ## One-time permissions
 
@@ -41,10 +35,10 @@ last resort for TVs that have no such screen.
 
 | Feature | Command |
 |---|---|
-| Continue Watching + Do Not Disturb | `adb shell cmd notification allow_listener com.hydrainnit.refract/com.hydrainnit.refract.MediaWatchService` |
-| Power Off + Sleep Timer | `adb shell dpm set-active-admin com.hydrainnit.refract/.SleepReceiver\$Admin` |
-| Wi-Fi name in Control Center | `adb shell pm grant com.hydrainnit.refract android.permission.ACCESS_FINE_LOCATION` |
-| Search dictation (microphone) | `adb shell pm grant com.hydrainnit.refract android.permission.RECORD_AUDIO` — not normally needed: without it, Search uses the TV's own voice prompt |
+| Continue Watching + Do Not Disturb | `adb shell cmd notification allow_listener com.arinaggarwal.refract/com.arinaggarwal.refract.MediaWatchService` |
+| Power Off + Sleep Timer | `adb shell dpm set-active-admin com.arinaggarwal.refract/.SleepReceiver\$Admin` |
+| Wi-Fi name in Control Center | `adb shell pm grant com.arinaggarwal.refract android.permission.ACCESS_FINE_LOCATION` |
+| Search dictation (microphone) | `adb shell pm grant com.arinaggarwal.refract android.permission.RECORD_AUDIO` — not normally needed: without it, Search uses the TV's own voice prompt |
 
 ## Optional: recommendation source
 
@@ -54,7 +48,7 @@ Nuvio when only Nuvio is installed) and **TMDB**. For TMDB, enter a free API key
 easiest to type with a remote. It can also be set from a computer:
 
 ```sh
-adb shell am start -n com.hydrainnit.refract/.SettingsActivity --es tmdb_token <token>
+adb shell am start -n com.arinaggarwal.refract/.SettingsActivity --es tmdb_token <token>
 ```
 
 ## Optional: AirPlay receiver
@@ -75,7 +69,8 @@ version 0.0.36 on a Mi Box (Android 12) and an Android 9 TV.
 
 ## Undo
 
+Switch back to the still-installed original, preserving both apps' data:
+
 ```sh
-adb shell pm enable com.google.android.tvlauncher     # bring back the stock launcher
-adb uninstall com.hydrainnit.refract
+python3 tools/tv.py --serial TV_IP:5555 rollback-home
 ```
