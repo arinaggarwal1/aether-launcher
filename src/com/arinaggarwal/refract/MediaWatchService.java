@@ -90,6 +90,49 @@ public class MediaWatchService extends NotificationListenerService {
     /** The Continue Watching list on disk (files/continue.json + artwork in files/cw/). */
     static final class Store {
         static final int MAX = 20;
+        static final String INCLUDED_APPS = "cw_included_apps", APPS_INITIALIZED = "cw_apps_initialized";
+
+        /** Keep existing apps working on upgrade; apps installed after initialization need opt-in. */
+        static synchronized java.util.Set<String> includedApps(Context c) {
+            return includedAppsForProfile(c, Profiles.current(c).id);
+        }
+
+        static synchronized void initializeProfiles(Context c) {
+            for (Profiles.Profile profile : Profiles.list(c)) includedAppsForProfile(c, profile.id);
+        }
+
+        private static java.util.Set<String> includedAppsForProfile(Context c, String profileId) {
+            android.content.SharedPreferences prefs = c.getSharedPreferences(Profiles.prefsName(profileId), Context.MODE_PRIVATE);
+            if (!prefs.getBoolean(APPS_INITIALIZED, false)) {
+                java.util.Set<String> initial = new java.util.HashSet<>();
+                android.content.pm.PackageManager pm = c.getPackageManager();
+                for (String category : new String[]{android.content.Intent.CATEGORY_LEANBACK_LAUNCHER,
+                        android.content.Intent.CATEGORY_LAUNCHER}) {
+                    android.content.Intent query = new android.content.Intent(android.content.Intent.ACTION_MAIN).addCategory(category);
+                    for (android.content.pm.ResolveInfo app : pm.queryIntentActivities(query, 0)) {
+                        if (app.activityInfo != null && !c.getPackageName().equals(app.activityInfo.packageName))
+                            initial.add(app.activityInfo.packageName);
+                    }
+                }
+                JSONArray history;
+                try {
+                    File historyFile = new File(c.getFilesDir(), Profiles.continueFile(profileId));
+                    history = new JSONArray(new String(Suggestions.readAll(new FileInputStream(historyFile)), StandardCharsets.UTF_8));
+                } catch (Exception ignored) { history = new JSONArray(); }
+                for (int i = 0; i < history.length(); i++) {
+                    JSONObject entry = history.optJSONObject(i);
+                    if (entry != null && !entry.optString("pkg").isEmpty()) initial.add(entry.optString("pkg"));
+                }
+                prefs.edit().putStringSet(INCLUDED_APPS, initial).putBoolean(APPS_INITIALIZED, true).apply();
+                return initial;
+            }
+            return new java.util.HashSet<>(prefs.getStringSet(INCLUDED_APPS, java.util.Collections.emptySet()));
+        }
+
+        static synchronized void setIncludedApps(Context c, java.util.Set<String> packages) {
+            Profiles.homePrefs(c).edit().putStringSet(INCLUDED_APPS, new java.util.HashSet<>(packages))
+                    .putBoolean(APPS_INITIALIZED, true).apply();
+        }
 
         static File file(Context c) {
             return new File(c.getFilesDir(), Profiles.continueFile(Profiles.current(c).id));
@@ -119,7 +162,7 @@ public class MediaWatchService extends NotificationListenerService {
         }
 
         static synchronized void record(Context c, String pkg, MediaMetadata m, PlaybackState s) {
-            if (m == null || pkg == null || pkg.equals(c.getPackageName())) return;
+            if (m == null || pkg == null || pkg.equals(c.getPackageName()) || !includedApps(c).contains(pkg)) return;
             String title = text(m, MediaMetadata.METADATA_KEY_DISPLAY_TITLE, MediaMetadata.METADATA_KEY_TITLE);
             if (title.isEmpty()) return;
             String sub = text(m, MediaMetadata.METADATA_KEY_DISPLAY_SUBTITLE, MediaMetadata.METADATA_KEY_ARTIST,
@@ -217,9 +260,10 @@ public class MediaWatchService extends NotificationListenerService {
         static List<Suggestions.Item> list(Context c) {
             JSONArray a = pruneExpired(c);
             List<Suggestions.Item> out = new ArrayList<>();
+            java.util.Set<String> included = includedApps(c);
             for (int i = 0; i < a.length(); i++) {
                 JSONObject o = a.optJSONObject(i);
-                if (o == null || !Suggestions.installed(c, o.optString("pkg"))) continue;
+                if (o == null || !included.contains(o.optString("pkg")) || !Suggestions.installed(c, o.optString("pkg"))) continue;
                 Suggestions.Item it = new Suggestions.Item();
                 it.id = o.optString("key").hashCode();
                 it.type = "continue";

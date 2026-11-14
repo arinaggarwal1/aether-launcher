@@ -224,7 +224,10 @@ public class MainActivity extends Activity {
         lowRam = amgr != null && (amgr.isLowRamDevice() || amgr.getMemoryClass() <= 128);
         // Startup: the app list (package manager, banners, icon colours) and the wallpaper are
         // prepared in the background while the window's views are built (~250 ms saved on 1 GHz TVs).
-        java.util.concurrent.Future<?> appsTask = io.submit(this::loadApps);
+        java.util.concurrent.Future<?> appsTask = io.submit(() -> {
+            loadApps();
+            MediaWatchService.Store.initializeProfiles(this);
+        });
         String wall = Wallpapers.style(this);
         wallPrefetch = new java.util.concurrent.FutureTask<>(() -> makeWallpaper(wall));
         wallPrefetchStyle = wall;

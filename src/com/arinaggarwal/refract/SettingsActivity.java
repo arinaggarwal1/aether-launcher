@@ -495,12 +495,64 @@ public class SettingsActivity extends Activity {
             Profiles.homePrefs(this).edit().putBoolean("cw_enabled", on).apply();
             if (!on) Toast.makeText(this, "Continue Watching titles won\u2019t appear in the carousel", Toast.LENGTH_SHORT).show();
         });
+        row("Apps", () -> {
+            int n = MediaWatchService.Store.includedApps(this).size();
+            return n + " included";
+        }, this::chooseWatchingApps);
         row("Access", () -> MediaWatchService.granted(this) ? "Allowed"
                 : Perms.listenerSupported(this) ? "Allow\u2026" : "Not on this TV", () -> Perms.requestListener(this));
         row("Clear history", () -> "", () -> {
             MediaWatchService.Store.clear(this);
             Toast.makeText(this, "Continue Watching cleared", Toast.LENGTH_SHORT).show();
         });
+    }
+
+    /** Include launchable apps, including hidden ones and apps without a TV-specific icon. */
+    void chooseWatchingApps() {
+        android.content.pm.PackageManager pm = getPackageManager();
+        java.util.Map<String, String> labels = new java.util.HashMap<>();
+        for (String category : new String[]{Intent.CATEGORY_LEANBACK_LAUNCHER, Intent.CATEGORY_LAUNCHER}) {
+            Intent query = new Intent(Intent.ACTION_MAIN).addCategory(category);
+            for (android.content.pm.ResolveInfo app : pm.queryIntentActivities(query, 0)) {
+                if (app.activityInfo == null) continue;
+                String pkg = app.activityInfo.packageName;
+                if (!pkg.equals(getPackageName()) && !labels.containsKey(pkg)) {
+                    CharSequence label = app.loadLabel(pm);
+                    labels.put(pkg, label == null ? pkg : label.toString());
+                }
+            }
+        }
+        org.json.JSONArray history = MediaWatchService.Store.read(this);
+        for (int i = 0; i < history.length(); i++) {
+            org.json.JSONObject item = history.optJSONObject(i);
+            if (item == null) continue;
+            String pkg = item.optString("pkg");
+            if (pkg.isEmpty() || labels.containsKey(pkg)) continue;
+            try { labels.put(pkg, pm.getApplicationLabel(pm.getApplicationInfo(pkg, 0)).toString()); }
+            catch (android.content.pm.PackageManager.NameNotFoundException ignored) { }
+        }
+        List<String> packages = new ArrayList<>(labels.keySet());
+        packages.sort((a, b) -> {
+            int result = labels.get(a).compareToIgnoreCase(labels.get(b));
+            return result != 0 ? result : a.compareTo(b);
+        });
+        Set<String> included = MediaWatchService.Store.includedApps(this);
+        String[] names = new String[packages.size()];
+        boolean[] on = new boolean[packages.size()];
+        for (int i = 0; i < packages.size(); i++) {
+            String pkg = packages.get(i), label = labels.get(pkg);
+            boolean duplicate = (i > 0 && labels.get(packages.get(i - 1)).equalsIgnoreCase(label))
+                    || (i + 1 < packages.size() && labels.get(packages.get(i + 1)).equalsIgnoreCase(label));
+            names[i] = duplicate ? label + " (" + pkg + ")" : label;
+            on[i] = included.contains(pkg);
+        }
+        Sheet choices = dialog("Continue Watching apps").setMessage("Selected apps can add titles. New apps are off until selected. Changes save immediately; press Back when finished.");
+        if (names.length == 0) choices.setMessage("No apps found.");
+        choices.setMultiChoiceItems(names, on, (d, w, checked) -> {
+                    if (checked) included.add(packages.get(w));
+                    else included.remove(packages.get(w));
+                    MediaWatchService.Store.setIncludedApps(this, included);
+                }).show();
     }
 
     void pageHome() {

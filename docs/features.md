@@ -138,6 +138,10 @@ Full-screen artwork behind the dock while a dock app is focused. One carousel ho
 1. **Continue Watching** (up to six): what you played recently in each app, from the "now playing"
    information apps publish (title, artwork, position, time left). **▶ Resume** opens the app;
    **✕ Remove** drops it. Titles not played again for **7 days** expire.
+   In **Settings → Continue Watching → Apps**, choose which apps can contribute for the
+   current profile. Excluded apps stop recording and their existing entries are hidden, not deleted;
+   apps already installed when the feature is first used stay included, while newly installed apps
+   are off until selected. Re-enabling an app can show its unexpired entries again.
 2. **News** and **recommendations**, alternating.
 
 - **Recommendations**: popular titles in India on your services. Source **JustWatch** (no key,
