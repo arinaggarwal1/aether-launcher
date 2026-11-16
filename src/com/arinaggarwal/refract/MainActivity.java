@@ -26,6 +26,7 @@ import android.graphics.Color;
 import android.graphics.LinearGradient;
 import android.graphics.Outline;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.PorterDuff;
 import android.graphics.RadialGradient;
 import android.graphics.Rect;
@@ -1145,7 +1146,7 @@ public class MainActivity extends Activity {
 
     /** System/utility apps that get a drawn tvOS-style card instead of their Android art. */
     static final Set<String> TVOS_CARD_PKGS = new HashSet<>(Arrays.asList(
-            TV_SETTINGS, "com.android.vending", "com.mitv.dream"));
+            TV_SETTINGS, "com.android.vending", "com.amazon.venezia", "com.mitv.dream"));
 
     /**
      * tvOS-style card: soft vertical gradient with a top sheen and the app's glyph centred.
@@ -1156,12 +1157,13 @@ public class MainActivity extends Activity {
         Bitmap b = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
         Canvas c = new Canvas(b);
         Paint p = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.DITHER_FLAG);
-        boolean settings = isSettings(e);
+        boolean settings = isSettings(e) || AMAZON_SETTINGS_KEY.equals(e.key);
+        boolean amazonStore = AMAZON_STORE_KEY.equals(e.key) || "com.amazon.venezia".equals(e.pkg);
         int top, bottom;
         if (settings) {                                  // tvOS Settings: silver
             top = 0xFFE9E9EE;
             bottom = 0xFFAFAFB8;
-        } else if ("com.android.vending".equals(e.pkg)) { // tvOS App Store-style blue
+        } else if (amazonStore || "com.android.vending".equals(e.pkg)) { // tvOS App Store-style blue
             top = 0xFF1FA2FF;
             bottom = 0xFF0A55E6;
         } else {                                         // vivid gradient in the app's own hue
@@ -1177,6 +1179,10 @@ public class MainActivity extends Activity {
 
         if (settings) {
             drawGear(c, w / 2f, h / 2f, h * 0.27f, 0xFF4A4A52, 0xFFD2D2D9);
+            return b;
+        }
+        if (amazonStore) {
+            drawAppstoreBag(c, w / 2f, h / 2f, h * 0.5f);
             return b;
         }
         Bitmap glyph = whiteGlyph(e, (int) (h * 0.5f));
@@ -1231,6 +1237,36 @@ public class MainActivity extends Activity {
         if (g != full) g.recycle();
         full.recycle();
         return out;
+    }
+
+    /** A simple shopping bag and Amazon smile stay legible at dock size without app artwork. */
+    static void drawAppstoreBag(Canvas c, float cx, float cy, float size) {
+        c.save();
+        c.translate(cx - size / 2, cy - size / 2);
+        c.scale(size / 100f, size / 100f);
+        Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
+        p.setColor(Color.WHITE);
+        p.setStyle(Paint.Style.STROKE);
+        p.setStrokeWidth(7);
+        p.setStrokeCap(Paint.Cap.ROUND);
+        c.drawArc(34, 5, 66, 45, 180, 180, false, p);
+        p.setStyle(Paint.Style.FILL);
+        c.drawRoundRect(14, 25, 86, 95, 9, 9, p);
+
+        p.setColor(0xFFFF9900);
+        p.setStyle(Paint.Style.STROKE);
+        p.setStrokeWidth(5);
+        Path smile = new Path();
+        smile.moveTo(29, 62);
+        smile.cubicTo(40, 73, 58, 75, 73, 61);
+        c.drawPath(smile, p);
+        p.setStrokeJoin(Paint.Join.ROUND);
+        Path arrow = new Path();
+        arrow.moveTo(62, 60);
+        arrow.lineTo(74, 59);
+        arrow.lineTo(72, 71);
+        c.drawPath(arrow, p);
+        c.restore();
     }
 
     /** tvOS Settings-style gear: toothed ring with a hollow centre. */
@@ -3601,10 +3637,30 @@ public class MainActivity extends Activity {
             }
             if (artworkServer != null) artworkServer.close();
             artworkServer = server;
+            // Match the Presentation pairing card: QR on the left, instructions on the right.
+            LinearLayout box = new LinearLayout(this);
+            box.setOrientation(LinearLayout.HORIZONTAL);
+            box.setGravity(Gravity.CENTER_VERTICAL);
+            box.setPadding(dp(16), dp(16), dp(16), dp(8));
+            ImageView qr = new ImageView(this);
+            qr.setImageBitmap(com.arinaggarwal.refract.present.Qr.bitmap(url, dp(144)));
+            qr.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            qr.setBackgroundColor(Color.WHITE);
+            // Leave at least four white modules around this token-protected URL.
+            qr.setPadding(dp(18), dp(18), dp(18), dp(18));
+            qr.setContentDescription("Scan to change the app image");
+            box.addView(qr, new LinearLayout.LayoutParams(dp(180), dp(180)));
+            TextView info = new TextView(this);
+            info.setText("Scan with your phone, or open this address on a computer on the same network:\n\n"
+                    + url + "\n\nChoose an image and select Send to TV. Keep this screen open until it arrives.");
+            info.setTextColor(Color.WHITE);
+            info.setTypeface(Ui.font(this, "regular"));
+            Ui.textSize(info, 14);
+            info.setPadding(dp(18), 0, 0, 0);
+            box.addView(info, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
             dialog[0] = new AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
                     .setTitle("Change Image: " + app.label)
-                    .setMessage("On a phone or computer connected to the same network, open:\n\n" + url
-                            + "\n\nChoose an image and select Send to TV. Keep this screen open until it arrives.")
+                    .setView(box)
                     .setNegativeButton("Cancel", (d, which) -> { }).create();
             dialog[0].setOnDismissListener(d -> {
                 server.close();

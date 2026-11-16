@@ -59,11 +59,14 @@ screen. The initial updater version must first be installed using ADB.
 - **Device Settings** appears on Home by default and opens the TV's own Settings app. It can be
   moved or hidden like other apps; Refract Settings remains available in the status row.
 - **App images**: hold OK on an app and select **Change Image**. Keep the instructions open
-  while you open the displayed address on a phone or computer on the same network. Choose an
+  while you scan the QR code with your phone or open the displayed address on a computer on
+  the same network. Choose an
   image and send it to the TV. Refract stores a private copy shared across profiles. Select
   **Return to Default Image** to restore the app's usual card and delete the saved custom image.
   Xtra TV includes a Refract design by default. App updates do not replace custom images.
 - **System apps** (Settings, Play Store…) get tvOS-style cards: a gradient with a white glyph.
+  Fire TV Settings uses a silver gear card; Amazon Appstore uses a white shopping bag with an
+  orange smile on blue. Custom app images take priority over these defaults.
 - **Background**: Aurora, Midnight, Sunset, Ocean or Graphite (per profile).
 
 ### Remote controls
