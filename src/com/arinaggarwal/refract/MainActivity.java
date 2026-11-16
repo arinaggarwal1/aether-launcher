@@ -79,6 +79,8 @@ public class MainActivity extends Activity {
     static final String SETTINGS_KEY = "special:settings";
     static final String PRESENT_KEY = "special:present";
     static final String INPUTS_KEY = "special:inputs";
+    static final String AMAZON_SETTINGS_KEY = "special:amazon-settings";
+    static final String AMAZON_STORE_KEY = "special:amazon-store";
     static final String FOLDER_KEY = "special:folder";
     static final String PREF_ORDER = "order";
     static final String PREF_HIDDEN = "hidden";
@@ -3195,6 +3197,8 @@ public class MainActivity extends Activity {
         addResolved(pm, Intent.CATEGORY_LEANBACK_LAUNCHER, pkgs, true);
         addResolved(pm, Intent.CATEGORY_LAUNCHER, pkgs, false);
         addSettingsEntry(pm);
+        addAmazonEntry(pm, AMAZON_SETTINGS_KEY, "Fire TV Settings", "com.amazon.tv.launcher", "com.amazon.tv.launcher.ui.MainSettingsActivity");
+        addAmazonEntry(pm, AMAZON_STORE_KEY, "Amazon Appstore", "com.amazon.venezia", "com.amazon.venezia.ade.ADEHomeActivity");
         if (com.arinaggarwal.refract.present.Presenter.enabled(this)) addPresentEntry();
         inputs = Inputs.list(this);
         if (Inputs.showCard(this) && !inputs.isEmpty()) addInputsEntry();
@@ -3265,8 +3269,30 @@ public class MainActivity extends Activity {
         all.put(s.key, s);
     }
 
+    /** Expose Amazon's built-in activities as drawer tiles without installing shortcut APKs. */
+    void addAmazonEntry(PackageManager pm, String key, String label, String pkg, String activity) {
+        ComponentName target = new ComponentName(pkg, activity);
+        try {
+            ActivityInfo info = pm.getActivityInfo(target, 0);
+            if (!info.exported || all.containsKey(key)) return;
+            AppEntry entry = new AppEntry();
+            entry.key = key;
+            entry.pkg = pkg;
+            entry.label = label;
+            entry.system = true;
+            entry.launch = new Intent(Intent.ACTION_MAIN).setComponent(target).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            entry.color = key.equals(AMAZON_SETTINGS_KEY) ? 0xFF3A3A3C : 0xFF1478E8;
+            try { entry.icon = pm.getActivityIcon(target); }
+            catch (PackageManager.NameNotFoundException ignored) { entry.icon = pm.getApplicationIcon(pkg); }
+            entry.banner = new BitmapDrawable(getResources(), tvosCard(entry));
+            all.put(key, entry);
+        } catch (PackageManager.NameNotFoundException ignored) { }
+    }
+
     int priority(AppEntry e) {
         if (INPUTS_KEY.equals(e.key)) return -1;
+        if (AMAZON_SETTINGS_KEY.equals(e.key)) return 1998;
+        if (AMAZON_STORE_KEY.equals(e.key)) return 1997;
         if (isSettings(e)) return 2000;
         if (PRESENT_KEY.equals(e.key)) return 1999;
         int i = DEFAULT_ORDER.indexOf(e.pkg);
