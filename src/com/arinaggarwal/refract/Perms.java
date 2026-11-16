@@ -47,7 +47,9 @@ final class Perms {
     static Intent accessibilityScreen(Activity a) {
         Intent i = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
         ComponentName cn = i.resolveActivity(a.getPackageManager());
-        return cn == null || cn.getClassName().contains("Stub") ? null : i;
+        if (cn == null) return null;
+        String name = cn.getClassName().toLowerCase(java.util.Locale.ROOT);
+        return name.contains("stub") || name.contains("dummy") ? null : i;
     }
 
     static boolean hasAdmin(Activity a) {
@@ -110,7 +112,7 @@ final class Perms {
                         "Lets Refract Launcher turn the screen off for Power Off and the Sleep Timer. It can't do anything else.");
         if (tryStart(a, i)) return;
         lastResort(a, "Power Off & Sleep Timer",
-                "adb shell dpm set-active-admin com.arinaggarwal.refract/.SleepReceiver\\$Admin");
+                "adb -s TV_SERIAL shell 'dpm set-active-admin \"com.arinaggarwal.refract/.SleepReceiver\\$Admin\"'");
     }
 
     static void requestListener(Activity a) {
@@ -137,7 +139,9 @@ final class Perms {
     /** Starts a system screen if the TV really has it (many TVs map settings actions to empty stubs). */
     private static boolean tryStart(Activity a, Intent i) {
         ComponentName cn = i.resolveActivity(a.getPackageManager());
-        if (cn == null || cn.getClassName().contains("Stub")) return false;
+        if (cn == null) return false;
+        String name = cn.getClassName().toLowerCase(java.util.Locale.ROOT);
+        if (name.contains("stub") || name.contains("dummy")) return false;
         try {
             a.startActivity(i);
             return true;
@@ -187,7 +191,8 @@ final class Perms {
         new AlertDialog.Builder(a, android.R.style.Theme_DeviceDefault_Dialog_Alert)
                 .setTitle(what)
                 .setMessage("This TV's settings have no switch for this permission. Whoever set up the TV can turn it on "
-                        + "once from a computer on the same network:\n\n" + cmd)
+                        + "once from a computer on the same network" + (cmd.contains("TV_SERIAL")
+                        ? " (replace TV_SERIAL with the TV's ADB serial)" : "") + ":\n\n" + cmd)
                 .setPositiveButton("OK", null)
                 .setNeutralButton("App info", (d, w) -> tryStart(a, new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
                         Uri.parse("package:" + a.getPackageName()))))

@@ -16,7 +16,9 @@ final class ArtworkServer implements AutoCloseable {
     private final Importer importer;
     private final Runnable completed;
     private final String token;
-    private volatile Socket client;
+    private final java.util.Set<Socket> clients = java.util.Collections.synchronizedSet(new java.util.HashSet<>());
+    private final java.util.concurrent.Semaphore slots = new java.util.concurrent.Semaphore(4);
+    private final java.util.concurrent.atomic.AtomicBoolean importing = new java.util.concurrent.atomic.AtomicBoolean();
     private volatile boolean closed;
     private static final long LIMIT = 16L * 1024 * 1024;
 
@@ -44,8 +46,17 @@ final class ArtworkServer implements AutoCloseable {
         new Thread(() -> {
             while (!closed) {
                 try {
-                    Socket s = server.accept(); client = s;
-                    try { handle(s); } finally { client = null; s.close(); }
+                    Socket s = server.accept();
+                    if (!slots.tryAcquire()) { s.close(); continue; }
+                    clients.add(s);
+                    new Thread(() -> {
+                        try { handle(s); } catch (IOException ignored) { }
+                        finally {
+                            clients.remove(s);
+                            try { s.close(); } catch (IOException ignored) { }
+                            slots.release();
+                        }
+                    }, "artwork-client").start();
                 } catch (IOException ignored) { }
             }
         }, "artwork-upload").start();
@@ -78,9 +89,11 @@ final class ArtworkServer implements AutoCloseable {
         if (!request[0].equals("POST") || length <= 0 || length > LIMIT) {
             respond(out, 400, "text/plain", new byte[0]); return;
         }
-        File temp = File.createTempFile("art-upload-", ".image", cache);
+        if (!importing.compareAndSet(false, true)) { respond(out, 409, "text/plain", new byte[0]); return; }
+        File temp = null;
         boolean ok = false;
         try {
+            temp = File.createTempFile("art-upload-", ".image", cache);
             try (OutputStream dst = new FileOutputStream(temp)) {
                 byte[] buf = new byte[32768]; long remaining = length;
                 while (remaining > 0) {
@@ -90,9 +103,12 @@ final class ArtworkServer implements AutoCloseable {
                 }
             }
             if (!closed) ok = importer.importImage(temp);
-        } finally { temp.delete(); }
-        respond(out, ok ? 200 : 400, "text/plain", new byte[0]);
-        if (ok) { close(); completed.run(); }
+            respond(out, ok ? 200 : 400, "text/plain", new byte[0]);
+            if (ok) { close(); completed.run(); }
+        } finally {
+            if (temp != null) temp.delete();
+            importing.set(false);
+        }
     }
     private static void respond(OutputStream out, int status, String type, byte[] body) throws IOException {
         String h = "HTTP/1.1 " + status + (status == 200 ? " OK" : " Bad Request") + "\r\nContent-Type: " + type
@@ -102,6 +118,8 @@ final class ArtworkServer implements AutoCloseable {
     @Override public void close() {
         closed = true;
         try { server.close(); } catch (IOException ignored) { }
-        try { if (client != null) client.close(); } catch (IOException ignored) { }
+        synchronized (clients) {
+            for (Socket s : clients) try { s.close(); } catch (IOException ignored) { }
+        }
     }
 }

@@ -276,7 +276,7 @@ Refract asks on screen wherever the TV allows it; adb is only a last resort.
 |---|---|
 | Wi-Fi name (location) | Android's permission prompt |
 | Continue Watching & Do Not Disturb | The system notification-access screen. Not possible on low-RAM (1 GB) TVs, where Android disables it — Refract says so |
-| Power Off & Sleep Timer | Android's "Activate device admin app?" screen; where device admin is switched off (e.g. Mi Box), Refract's accessibility switch **Refract Launcher – Power Off** in the TV's Accessibility settings (opened for you). The same switch lets Clean close apps |
+| Power Off & Sleep Timer | Android's "Activate device admin app?" screen; Fire TV devices with a dummy permission screen show a one-time ADB command instead. Where device admin is switched off (e.g. Mi Box), Refract's accessibility switch **Refract Launcher – Power Off** in the TV's Accessibility settings (opened for you). The same switch lets Clean close apps |
 | Search dictation (microphone) | Android's permission prompt the first time the mic is used; without it, the TV's voice prompt is used |
 | Home screen | Android 10+ "default home app" prompt, the TV's Home-app settings, or Android's chooser; Refract offers this once if another launcher is home |
 
