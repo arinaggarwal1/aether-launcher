@@ -4106,67 +4106,72 @@ public class MainActivity extends Activity {
         LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.VERTICAL);
         card.setGravity(Gravity.CENTER_HORIZONTAL);
-        card.setPadding(dp(26), dp(22), dp(26), dp(24));
+        card.setPadding(dp(32), dp(24), dp(32), dp(26));
         card.setBackground(theme.panel(dp(28), unit));
         card.setClipChildren(false);
         card.setClipToPadding(false);
 
         ImageView icon = new ImageView(this);
-        icon.setImageBitmap(Glyphs.get("timer", dp(30), 0xFFFF9F0A));
-        card.addView(icon, new LinearLayout.LayoutParams(dp(30), dp(30)));
+        icon.setImageBitmap(Glyphs.get("timer", dp(26), 0xFFFF9F0A));
+        card.addView(icon, new LinearLayout.LayoutParams(dp(26), dp(26)));
         TextView title = text(21, Ui.font(this, "semibold"), 1f);
         title.setText("Sleep Timer");
         title.setTextColor(theme.light ? theme.glyph : Color.WHITE);
         title.setShadowLayer(0, 0, 0, 0);
         LinearLayout.LayoutParams titleLp = new LinearLayout.LayoutParams(-2, -2);
-        titleLp.topMargin = dp(5);
+        titleLp.topMargin = dp(7);
         card.addView(title, titleLp);
         TextView detail = text(12, Ui.font(this, "regular"), 0.75f);
         detail.setText(remaining > 0 ? formatSleepDuration(remaining) + " remaining" : "Choose when to put the TV to sleep");
         detail.setTextColor(theme.light ? theme.glyph : Color.WHITE);
         detail.setShadowLayer(0, 0, 0, 0);
         LinearLayout.LayoutParams detailLp = new LinearLayout.LayoutParams(-2, -2);
-        detailLp.topMargin = dp(4);
+        detailLp.topMargin = dp(5);
         card.addView(detail, detailLp);
 
         LinearLayout adjust = new LinearLayout(this);
         adjust.setGravity(Gravity.CENTER);
         adjust.setClipChildren(false);
         TextView minus = timerButton("\u2212", 24);
-        TextView value = text(29, Ui.font(this, "semibold"), 1f);
+        TextView value = text(27, Ui.font(this, "semibold"), 1f);
         value.setGravity(Gravity.CENTER);
         value.setTextColor(theme.light ? theme.glyph : Color.WHITE);
         value.setShadowLayer(0, 0, 0, 0);
         value.setSingleLine(true);
         TextView plus = timerButton("+", 24);
         adjust.addView(minus, new LinearLayout.LayoutParams(dp(48), dp(48)));
-        adjust.addView(value, new LinearLayout.LayoutParams(dp(180), dp(54)));
+        adjust.addView(value, new LinearLayout.LayoutParams(dp(204), dp(54)));
         adjust.addView(plus, new LinearLayout.LayoutParams(dp(48), dp(48)));
         LinearLayout.LayoutParams adjustLp = new LinearLayout.LayoutParams(-2, -2);
-        adjustLp.topMargin = dp(14);
+        adjustLp.topMargin = dp(20);
         card.addView(adjust, adjustLp);
 
         TextView hint = text(11.5f, Ui.font(this, "regular"), 0.65f);
         hint.setText("Adjust by 1 minute");
         hint.setTextColor(theme.light ? theme.glyph : Color.WHITE);
         hint.setShadowLayer(0, 0, 0, 0);
-        card.addView(hint);
+        hint.setGravity(Gravity.CENTER);
+        LinearLayout.LayoutParams hintLp = new LinearLayout.LayoutParams(-1, -2);
+        hintLp.topMargin = dp(3);
+        card.addView(hint, hintLp);
 
         LinearLayout presets = new LinearLayout(this);
         presets.setGravity(Gravity.CENTER);
         presets.setClipChildren(false);
         int[] choices = {15, 30, 60, 90};
         List<TextView> presetButtons = new ArrayList<>();
-        for (int choice : choices) {
-            TextView preset = timerButton(formatSleepDuration(choice), 12);
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(70), dp(38));
-            lp.leftMargin = dp(3);
-            lp.rightMargin = dp(3);
+        String[] presetLabels = {"15 min", "30 min", "1 hr", "1 hr 30 min"};
+        for (int i = 0; i < choices.length; i++) {
+            TextView preset = timerButton(presetLabels[i], 12);
+            preset.setContentDescription(formatSleepDuration(choices[i]));
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(77), dp(40));
+            lp.leftMargin = dp(4);
+            lp.rightMargin = dp(4);
             presets.addView(preset, lp);
             presetButtons.add(preset);
         }
         LinearLayout.LayoutParams presetsLp = new LinearLayout.LayoutParams(-2, -2);
-        presetsLp.topMargin = dp(14);
+        presetsLp.topMargin = dp(19);
         card.addView(presets, presetsLp);
         Runnable update = () -> {
             value.setText(formatSleepDuration(minutes[0]));
@@ -4192,12 +4197,14 @@ public class MainActivity extends Activity {
         actions.setClipChildren(false);
         TextView off = timerButton(remaining > 0 ? "Turn Off" : "Cancel", 13);
         TextView start = timerButton(remaining > 0 ? "Update Timer" : "Start Timer", 13);
-        LinearLayout.LayoutParams actionLp = new LinearLayout.LayoutParams(dp(136), dp(42));
-        actionLp.rightMargin = dp(8);
+        start.setTag("primary");
+        paintTimerButton(start, false);
+        LinearLayout.LayoutParams actionLp = new LinearLayout.LayoutParams(dp(164), dp(44));
+        actionLp.rightMargin = dp(12);
         actions.addView(off, actionLp);
-        actions.addView(start, new LinearLayout.LayoutParams(dp(136), dp(42)));
+        actions.addView(start, new LinearLayout.LayoutParams(dp(164), dp(44)));
         LinearLayout.LayoutParams actionsLp = new LinearLayout.LayoutParams(-2, -2);
-        actionsLp.topMargin = dp(20);
+        actionsLp.topMargin = dp(18);
         card.addView(actions, actionsLp);
         off.setOnClickListener(v -> {
             if (remaining > 0) SleepReceiver.setTimer(this, 0);
@@ -4219,10 +4226,17 @@ public class MainActivity extends Activity {
             dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
             dialog.getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND);
             dialog.getWindow().setDimAmount(0.65f);
-            dialog.getWindow().setLayout(dp(370), ViewGroup.LayoutParams.WRAP_CONTENT);
+            dialog.getWindow().setLayout(dp(410), ViewGroup.LayoutParams.WRAP_CONTENT);
         }
         dialog.show();
-        if (dialog.getWindow() != null) dialog.getWindow().setLayout(dp(370), ViewGroup.LayoutParams.WRAP_CONTENT);
+        if (dialog.getWindow() != null) dialog.getWindow().setLayout(dp(410), ViewGroup.LayoutParams.WRAP_CONTENT);
+        // Animate the card once on entry; no animation runs while the popup is idle.
+        card.setAlpha(0f);
+        card.setScaleX(0.96f);
+        card.setScaleY(0.96f);
+        card.setTranslationY(dp(8));
+        card.animate().alpha(1f).scaleX(1f).scaleY(1f).translationY(0)
+                .setDuration(240).setInterpolator(EASE).start();
         plus.requestFocus();
     }
 
@@ -4237,6 +4251,8 @@ public class MainActivity extends Activity {
         TextView button = text(size, Ui.font(this, "semibold"), 1f);
         button.setText(label);
         button.setGravity(Gravity.CENTER);
+        button.setSingleLine(true);
+        button.setIncludeFontPadding(false);
         button.setShadowLayer(0, 0, 0, 0);
         button.setFocusable(true);
         button.setClickable(true);
@@ -4252,13 +4268,15 @@ public class MainActivity extends Activity {
     /** Presets retain a subtle amber selection when focus moves elsewhere. */
     void paintTimerButton(TextView button, boolean focused) {
         boolean selected = Boolean.TRUE.equals(button.getTag());
+        boolean primary = "primary".equals(button.getTag());
         GradientDrawable plate = new GradientDrawable();
         plate.setCornerRadius(dp(19));
-        plate.setColor(focused ? 0xF7FFFFFF : selected ? (theme.light ? 0x40FF9F0A : 0x55FF9F0A)
-                : theme.light ? 0x9EFFFFFF : 0x33FFFFFF);
+        plate.setColor(focused ? 0xF7FFFFFF : selected ? (theme.light ? 0x40FF9F0A : 0x44FF9F0A)
+                : primary ? (theme.light ? 0xFFFFD28A : 0xFF85530D) : theme.light ? 0x9EFFFFFF : 0x33FFFFFF);
         if (selected && !focused) plate.setStroke(dp(1), theme.light ? 0xAAAB5B00 : 0xFFFF9F0A);
         button.setBackground(plate);
-        button.setTextColor(focused ? 0xFF111114 : theme.light ? theme.glyph : Color.WHITE);
+        button.setTextColor(focused ? 0xFF111114 : primary ? (theme.light ? 0xFF241700 : Color.WHITE)
+                : theme.light ? theme.glyph : Color.WHITE);
     }
 
     // ---------------------------------------------------------------- inputs
