@@ -3233,8 +3233,8 @@ public class MainActivity extends Activity {
         Set<String> pkgs = new HashSet<>();
         addResolved(pm, Intent.CATEGORY_LEANBACK_LAUNCHER, pkgs, true);
         addResolved(pm, Intent.CATEGORY_LAUNCHER, pkgs, false);
-        addSettingsEntry(pm);
         addAmazonEntry(pm, AMAZON_SETTINGS_KEY, "Fire TV Settings", "com.amazon.tv.launcher", "com.amazon.tv.launcher.ui.MainSettingsActivity");
+        addSettingsEntry(pm);
         addAmazonEntry(pm, AMAZON_STORE_KEY, "Amazon Appstore", "com.amazon.venezia", "com.amazon.venezia.ade.ADEHomeActivity");
         if (com.arinaggarwal.refract.present.Presenter.enabled(this)) addPresentEntry();
         inputs = Inputs.list(this);
@@ -3288,6 +3288,9 @@ public class MainActivity extends Activity {
         if (resolved != null && resolved.activityInfo != null) {
             launch.setComponent(new ComponentName(settingsPackage, resolved.activityInfo.name));
         }
+        // On Fire TV the generic Settings action resolves to the launcher's stub. Prefer the
+        // dedicated Fire TV Settings shortcut when available, retaining the fallback on other TVs.
+        if (all.containsKey(AMAZON_SETTINGS_KEY) && "com.amazon.tv.launcher".equals(settingsPackage)) return;
         // Keep existing component keys so saved positions and hidden choices survive updates.
         for (AppEntry entry : all.values()) if (settingsPackage.equals(entry.pkg)) return;
         AppEntry s = new AppEntry();
@@ -4085,7 +4088,14 @@ public class MainActivity extends Activity {
 
     String timerState() {
         int left = SleepReceiver.timerLeft(this);
-        return left > 0 ? left + " min left" : "Off";
+        return left > 0 ? (left < 60 ? left + " min" : String.format(java.util.Locale.ROOT, "%d:%02d", left / 60, left % 60)) + " left" : "Off";
+    }
+
+    /** Keep durations readable in both the editor and the compact Control Center tile. */
+    static String formatSleepDuration(int minutes) {
+        if (minutes < 60) return minutes + " min";
+        int hours = minutes / 60, remainder = minutes % 60;
+        return hours + " hr" + (remainder == 0 ? "" : String.format(java.util.Locale.ROOT, " %02d min", remainder));
     }
 
     /** A remote-friendly timer editor; changes take effect only when Start or Turn Off is pressed. */
@@ -4101,64 +4111,86 @@ public class MainActivity extends Activity {
         card.setClipChildren(false);
         card.setClipToPadding(false);
 
-        TextView title = text(22, Ui.font(this, "semibold"), 1f);
+        ImageView icon = new ImageView(this);
+        icon.setImageBitmap(Glyphs.get("timer", dp(30), 0xFFFF9F0A));
+        card.addView(icon, new LinearLayout.LayoutParams(dp(30), dp(30)));
+        TextView title = text(21, Ui.font(this, "semibold"), 1f);
         title.setText("Sleep Timer");
         title.setTextColor(theme.light ? theme.glyph : Color.WHITE);
         title.setShadowLayer(0, 0, 0, 0);
-        card.addView(title);
+        LinearLayout.LayoutParams titleLp = new LinearLayout.LayoutParams(-2, -2);
+        titleLp.topMargin = dp(5);
+        card.addView(title, titleLp);
         TextView detail = text(12, Ui.font(this, "regular"), 0.75f);
-        detail.setText(remaining > 0 ? remaining + " min remaining" : "Choose when the TV goes to sleep");
+        detail.setText(remaining > 0 ? formatSleepDuration(remaining) + " remaining" : "Choose when to put the TV to sleep");
         detail.setTextColor(theme.light ? theme.glyph : Color.WHITE);
         detail.setShadowLayer(0, 0, 0, 0);
         LinearLayout.LayoutParams detailLp = new LinearLayout.LayoutParams(-2, -2);
-        detailLp.topMargin = dp(5);
+        detailLp.topMargin = dp(4);
         card.addView(detail, detailLp);
 
         LinearLayout adjust = new LinearLayout(this);
         adjust.setGravity(Gravity.CENTER);
         adjust.setClipChildren(false);
-        TextView minus = timerButton("\u2212", 21);
-        TextView value = text(28, Ui.font(this, "semibold"), 1f);
+        TextView minus = timerButton("\u2212", 24);
+        TextView value = text(29, Ui.font(this, "semibold"), 1f);
         value.setGravity(Gravity.CENTER);
         value.setTextColor(theme.light ? theme.glyph : Color.WHITE);
         value.setShadowLayer(0, 0, 0, 0);
-        TextView plus = timerButton("+", 21);
-        adjust.addView(minus, new LinearLayout.LayoutParams(dp(48), dp(44)));
-        adjust.addView(value, new LinearLayout.LayoutParams(dp(150), dp(50)));
-        adjust.addView(plus, new LinearLayout.LayoutParams(dp(48), dp(44)));
+        value.setSingleLine(true);
+        TextView plus = timerButton("+", 24);
+        adjust.addView(minus, new LinearLayout.LayoutParams(dp(48), dp(48)));
+        adjust.addView(value, new LinearLayout.LayoutParams(dp(180), dp(54)));
+        adjust.addView(plus, new LinearLayout.LayoutParams(dp(48), dp(48)));
         LinearLayout.LayoutParams adjustLp = new LinearLayout.LayoutParams(-2, -2);
-        adjustLp.topMargin = dp(17);
+        adjustLp.topMargin = dp(14);
         card.addView(adjust, adjustLp);
-        Runnable update = () -> {
-            value.setText(minutes[0] + " min");
-            value.setContentDescription(minutes[0] + " minutes");
-        };
-        minus.setContentDescription("Decrease timer by 5 minutes");
-        plus.setContentDescription("Increase timer by 5 minutes");
-        minus.setOnClickListener(v -> { minutes[0] = Math.max(5, minutes[0] - 5); update.run(); });
-        plus.setOnClickListener(v -> { minutes[0] = Math.min(180, minutes[0] + 5); update.run(); });
-        update.run();
+
+        TextView hint = text(11.5f, Ui.font(this, "regular"), 0.65f);
+        hint.setText("Adjust by 1 minute");
+        hint.setTextColor(theme.light ? theme.glyph : Color.WHITE);
+        hint.setShadowLayer(0, 0, 0, 0);
+        card.addView(hint);
 
         LinearLayout presets = new LinearLayout(this);
         presets.setGravity(Gravity.CENTER);
         presets.setClipChildren(false);
         int[] choices = {15, 30, 60, 90};
+        List<TextView> presetButtons = new ArrayList<>();
         for (int choice : choices) {
-            TextView preset = timerButton(choice + " min", 12);
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(66), dp(38));
-            lp.leftMargin = dp(4);
-            lp.rightMargin = dp(4);
+            TextView preset = timerButton(formatSleepDuration(choice), 12);
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(70), dp(38));
+            lp.leftMargin = dp(3);
+            lp.rightMargin = dp(3);
             presets.addView(preset, lp);
-            preset.setOnClickListener(v -> { minutes[0] = choice; update.run(); });
+            presetButtons.add(preset);
         }
         LinearLayout.LayoutParams presetsLp = new LinearLayout.LayoutParams(-2, -2);
-        presetsLp.topMargin = dp(15);
+        presetsLp.topMargin = dp(14);
         card.addView(presets, presetsLp);
+        Runnable update = () -> {
+            value.setText(formatSleepDuration(minutes[0]));
+            value.setContentDescription(formatSleepDuration(minutes[0]));
+            for (int i = 0; i < choices.length; i++) {
+                TextView preset = presetButtons.get(i);
+                preset.setTag(minutes[0] == choices[i]);
+                paintTimerButton(preset, preset.isFocused());
+            }
+        };
+        minus.setContentDescription("Decrease timer by 1 minute");
+        plus.setContentDescription("Increase timer by 1 minute");
+        minus.setOnClickListener(v -> { minutes[0] = Math.max(1, minutes[0] - 1); update.run(); });
+        plus.setOnClickListener(v -> { minutes[0] = Math.min(180, minutes[0] + 1); update.run(); });
+        for (int i = 0; i < choices.length; i++) {
+            final int choice = choices[i];
+            presetButtons.get(i).setOnClickListener(v -> { minutes[0] = choice; update.run(); });
+        }
+        update.run();
 
         LinearLayout actions = new LinearLayout(this);
         actions.setGravity(Gravity.CENTER);
         actions.setClipChildren(false);
-        TextView off = timerButton("Turn Off", 13);
+        TextView off = timerButton(remaining > 0 ? "Turn Off" : "Cancel", 13);
         TextView start = timerButton(remaining > 0 ? "Update Timer" : "Start Timer", 13);
         LinearLayout.LayoutParams actionLp = new LinearLayout.LayoutParams(dp(136), dp(42));
         actionLp.rightMargin = dp(8);
@@ -4168,9 +4200,9 @@ public class MainActivity extends Activity {
         actionsLp.topMargin = dp(20);
         card.addView(actions, actionsLp);
         off.setOnClickListener(v -> {
-            SleepReceiver.setTimer(this, 0);
+            if (remaining > 0) SleepReceiver.setTimer(this, 0);
             dialog.dismiss();
-            refreshSleepTimerTile();
+            if (remaining > 0) refreshSleepTimerTile();
         });
         start.setOnClickListener(v -> {
             if (!SleepReceiver.canSleep(this)) {
@@ -4187,11 +4219,11 @@ public class MainActivity extends Activity {
             dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
             dialog.getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND);
             dialog.getWindow().setDimAmount(0.65f);
-            dialog.getWindow().setLayout(dp(350), ViewGroup.LayoutParams.WRAP_CONTENT);
+            dialog.getWindow().setLayout(dp(370), ViewGroup.LayoutParams.WRAP_CONTENT);
         }
         dialog.show();
-        if (dialog.getWindow() != null) dialog.getWindow().setLayout(dp(350), ViewGroup.LayoutParams.WRAP_CONTENT);
-        start.requestFocus();
+        if (dialog.getWindow() != null) dialog.getWindow().setLayout(dp(370), ViewGroup.LayoutParams.WRAP_CONTENT);
+        plus.requestFocus();
     }
 
     /** Keep the Control Center status and active glyph in sync after the editor closes. */
@@ -4208,21 +4240,25 @@ public class MainActivity extends Activity {
         button.setShadowLayer(0, 0, 0, 0);
         button.setFocusable(true);
         button.setClickable(true);
-        GradientDrawable rest = new GradientDrawable();
-        rest.setCornerRadius(dp(19));
-        rest.setColor(theme.light ? 0x9EFFFFFF : 0x55FFFFFF);
-        GradientDrawable focused = new GradientDrawable();
-        focused.setCornerRadius(dp(19));
-        focused.setColor(0xF7FFFFFF);
-        button.setBackground(rest);
-        button.setTextColor(theme.light ? theme.glyph : Color.WHITE);
+        paintTimerButton(button, false);
         button.setOnFocusChangeListener((v, has) -> {
-            button.setBackground(has ? focused : rest);
-            button.setTextColor(has ? 0xFF111114 : theme.light ? theme.glyph : Color.WHITE);
+            paintTimerButton(button, has);
             v.animate().scaleX(has ? 1.06f : 1f).scaleY(has ? 1.06f : 1f)
                     .setDuration(200).setInterpolator(LIFT).start();
         });
         return button;
+    }
+
+    /** Presets retain a subtle amber selection when focus moves elsewhere. */
+    void paintTimerButton(TextView button, boolean focused) {
+        boolean selected = Boolean.TRUE.equals(button.getTag());
+        GradientDrawable plate = new GradientDrawable();
+        plate.setCornerRadius(dp(19));
+        plate.setColor(focused ? 0xF7FFFFFF : selected ? (theme.light ? 0x40FF9F0A : 0x55FF9F0A)
+                : theme.light ? 0x9EFFFFFF : 0x33FFFFFF);
+        if (selected && !focused) plate.setStroke(dp(1), theme.light ? 0xAAAB5B00 : 0xFFFF9F0A);
+        button.setBackground(plate);
+        button.setTextColor(focused ? 0xFF111114 : theme.light ? theme.glyph : Color.WHITE);
     }
 
     // ---------------------------------------------------------------- inputs

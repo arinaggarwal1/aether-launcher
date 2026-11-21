@@ -204,7 +204,7 @@ tile turns solid white.
 | Wi-Fi | Network name; opens Wi-Fi settings |
 | Do Not Disturb | On / off |
 | Audio | Current output; opens sound settings |
-| Sleep Timer | Open a timer editor with 5-minute adjustments, quick presets, and controls to start, update, or turn off the timer |
+| Sleep Timer | Open a timer editor with one-minute adjustments, hour-and-minute formatting, quick presets, and controls to start, update, or turn off the timer |
 | Round shortcuts | Inputs (TVs with inputs; Accessibility otherwise), Bluetooth/controllers, Settings, Search |
 
 ![Control Center](images/control-center.jpg)
