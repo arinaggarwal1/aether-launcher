@@ -7,6 +7,7 @@ import android.animation.ValueAnimator;
 import android.app.Activity;
 import android.app.ActivityOptions;
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -3732,7 +3733,7 @@ public class MainActivity extends Activity {
         cells.add(ccTile(grid, 0, y2, col, cap, "audio", "Audio", this::audioOutput, false, null,
                 v -> Suggestions.start(this, new Intent("android.settings.SOUND_SETTINGS"))));
         cells.add(ccTile(grid, col + gap, y2, col, cap, "timer", "Sleep Timer", this::timerState, false,
-                () -> SleepReceiver.timerLeft(this) > 0, v -> cycleSleepTimer()));
+                () -> SleepReceiver.timerLeft(this) > 0, v -> showSleepTimer()));
         int y3 = y2 + cap + gap;
         View mem = ccTile(grid, 0, y3, w, cap, "memory", "Memory", this::memoryState, false, null, v -> cleanMemory());
         addMemoryBar(mem);
@@ -4087,22 +4088,142 @@ public class MainActivity extends Activity {
         return left > 0 ? left + " min left" : "Off";
     }
 
-    /** Off \u2192 15 \u2192 30 \u2192 60 \u2192 90 \u2192 Off. */
-    void cycleSleepTimer() {
-        if (!SleepReceiver.canSleep(this)) {
-            Perms.requestAdmin(this);
-            return;
+    /** A remote-friendly timer editor; changes take effect only when Start or Turn Off is pressed. */
+    void showSleepTimer() {
+        int remaining = SleepReceiver.timerLeft(this);
+        final int[] minutes = {remaining > 0 ? Math.min(180, remaining) : 30};
+        Dialog dialog = new Dialog(this);
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setGravity(Gravity.CENTER_HORIZONTAL);
+        card.setPadding(dp(26), dp(22), dp(26), dp(24));
+        card.setBackground(theme.panel(dp(28), unit));
+        card.setClipChildren(false);
+        card.setClipToPadding(false);
+
+        TextView title = text(22, Ui.font(this, "semibold"), 1f);
+        title.setText("Sleep Timer");
+        title.setTextColor(theme.light ? theme.glyph : Color.WHITE);
+        title.setShadowLayer(0, 0, 0, 0);
+        card.addView(title);
+        TextView detail = text(12, Ui.font(this, "regular"), 0.75f);
+        detail.setText(remaining > 0 ? remaining + " min remaining" : "Choose when the TV goes to sleep");
+        detail.setTextColor(theme.light ? theme.glyph : Color.WHITE);
+        detail.setShadowLayer(0, 0, 0, 0);
+        LinearLayout.LayoutParams detailLp = new LinearLayout.LayoutParams(-2, -2);
+        detailLp.topMargin = dp(5);
+        card.addView(detail, detailLp);
+
+        LinearLayout adjust = new LinearLayout(this);
+        adjust.setGravity(Gravity.CENTER);
+        adjust.setClipChildren(false);
+        TextView minus = timerButton("\u2212", 21);
+        TextView value = text(28, Ui.font(this, "semibold"), 1f);
+        value.setGravity(Gravity.CENTER);
+        value.setTextColor(theme.light ? theme.glyph : Color.WHITE);
+        value.setShadowLayer(0, 0, 0, 0);
+        TextView plus = timerButton("+", 21);
+        adjust.addView(minus, new LinearLayout.LayoutParams(dp(48), dp(44)));
+        adjust.addView(value, new LinearLayout.LayoutParams(dp(150), dp(50)));
+        adjust.addView(plus, new LinearLayout.LayoutParams(dp(48), dp(44)));
+        LinearLayout.LayoutParams adjustLp = new LinearLayout.LayoutParams(-2, -2);
+        adjustLp.topMargin = dp(17);
+        card.addView(adjust, adjustLp);
+        Runnable update = () -> {
+            value.setText(minutes[0] + " min");
+            value.setContentDescription(minutes[0] + " minutes");
+        };
+        minus.setContentDescription("Decrease timer by 5 minutes");
+        plus.setContentDescription("Increase timer by 5 minutes");
+        minus.setOnClickListener(v -> { minutes[0] = Math.max(5, minutes[0] - 5); update.run(); });
+        plus.setOnClickListener(v -> { minutes[0] = Math.min(180, minutes[0] + 5); update.run(); });
+        update.run();
+
+        LinearLayout presets = new LinearLayout(this);
+        presets.setGravity(Gravity.CENTER);
+        presets.setClipChildren(false);
+        int[] choices = {15, 30, 60, 90};
+        for (int choice : choices) {
+            TextView preset = timerButton(choice + " min", 12);
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(66), dp(38));
+            lp.leftMargin = dp(4);
+            lp.rightMargin = dp(4);
+            presets.addView(preset, lp);
+            preset.setOnClickListener(v -> { minutes[0] = choice; update.run(); });
         }
-        int left = SleepReceiver.timerLeft(this);
-        int[] steps = {15, 30, 60, 90};
-        int next = steps[0];
-        if (left > 0) {
-            next = 0;
-            for (int st : steps) if (st > left + 1) { next = st; break; }
+        LinearLayout.LayoutParams presetsLp = new LinearLayout.LayoutParams(-2, -2);
+        presetsLp.topMargin = dp(15);
+        card.addView(presets, presetsLp);
+
+        LinearLayout actions = new LinearLayout(this);
+        actions.setGravity(Gravity.CENTER);
+        actions.setClipChildren(false);
+        TextView off = timerButton("Turn Off", 13);
+        TextView start = timerButton(remaining > 0 ? "Update Timer" : "Start Timer", 13);
+        LinearLayout.LayoutParams actionLp = new LinearLayout.LayoutParams(dp(136), dp(42));
+        actionLp.rightMargin = dp(8);
+        actions.addView(off, actionLp);
+        actions.addView(start, new LinearLayout.LayoutParams(dp(136), dp(42)));
+        LinearLayout.LayoutParams actionsLp = new LinearLayout.LayoutParams(-2, -2);
+        actionsLp.topMargin = dp(20);
+        card.addView(actions, actionsLp);
+        off.setOnClickListener(v -> {
+            SleepReceiver.setTimer(this, 0);
+            dialog.dismiss();
+            refreshSleepTimerTile();
+        });
+        start.setOnClickListener(v -> {
+            if (!SleepReceiver.canSleep(this)) {
+                dialog.dismiss();
+                Perms.requestAdmin(this);
+                return;
+            }
+            SleepReceiver.setTimer(this, minutes[0]);
+            dialog.dismiss();
+            refreshSleepTimerTile();
+        });
+        dialog.setContentView(card);
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            dialog.getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND);
+            dialog.getWindow().setDimAmount(0.65f);
+            dialog.getWindow().setLayout(dp(350), ViewGroup.LayoutParams.WRAP_CONTENT);
         }
-        SleepReceiver.setTimer(this, next);
+        dialog.show();
+        if (dialog.getWindow() != null) dialog.getWindow().setLayout(dp(350), ViewGroup.LayoutParams.WRAP_CONTENT);
+        start.requestFocus();
     }
 
+    /** Keep the Control Center status and active glyph in sync after the editor closes. */
+    void refreshSleepTimerTile() {
+        showControlCenter();
+        if (pickerCells.size() > 4) pickerCells.get(4).requestFocus();
+    }
+
+    /** Matches Control Center's white focus and short lift without a continuous animation. */
+    TextView timerButton(String label, float size) {
+        TextView button = text(size, Ui.font(this, "semibold"), 1f);
+        button.setText(label);
+        button.setGravity(Gravity.CENTER);
+        button.setShadowLayer(0, 0, 0, 0);
+        button.setFocusable(true);
+        button.setClickable(true);
+        GradientDrawable rest = new GradientDrawable();
+        rest.setCornerRadius(dp(19));
+        rest.setColor(theme.light ? 0x9EFFFFFF : 0x55FFFFFF);
+        GradientDrawable focused = new GradientDrawable();
+        focused.setCornerRadius(dp(19));
+        focused.setColor(0xF7FFFFFF);
+        button.setBackground(rest);
+        button.setTextColor(theme.light ? theme.glyph : Color.WHITE);
+        button.setOnFocusChangeListener((v, has) -> {
+            button.setBackground(has ? focused : rest);
+            button.setTextColor(has ? 0xFF111114 : theme.light ? theme.glyph : Color.WHITE);
+            v.animate().scaleX(has ? 1.06f : 1f).scaleY(has ? 1.06f : 1f)
+                    .setDuration(200).setInterpolator(LIFT).start();
+        });
+        return button;
+    }
 
     // ---------------------------------------------------------------- inputs
 
