@@ -94,6 +94,16 @@ final class Glyphs {
                 c.drawLine(m, m, m - s * 0.12f, m - s * 0.14f, p);
                 c.drawLine(m, s * 0.16f, m, s * 0.24f, p);
                 break;
+            case "bluetooth":
+                path.moveTo(s * 0.5f, s * 0.1f);
+                path.lineTo(s * 0.5f, s * 0.9f);
+                path.lineTo(s * 0.72f, s * 0.7f);
+                path.lineTo(s * 0.3f, s * 0.3f);
+                path.moveTo(s * 0.3f, s * 0.7f);
+                path.lineTo(s * 0.72f, s * 0.3f);
+                path.lineTo(s * 0.5f, s * 0.1f);
+                c.drawPath(path, p);
+                break;
             case "gamepad":
                 r.set(s * 0.08f, s * 0.3f, s * 0.92f, s * 0.74f);
                 p.setStyle(Paint.Style.FILL);

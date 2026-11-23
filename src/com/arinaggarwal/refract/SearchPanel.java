@@ -457,7 +457,7 @@ final class SearchPanel {
         }});
         l.add(new Object[]{"Refresh Carousel", "refresh reload news recommendations", "refresh", (Runnable) () -> { close(); a.refreshAll(); }});
         l.add(new Object[]{"Wi-Fi", "wifi network internet", "wifi", settings(Settings.ACTION_WIFI_SETTINGS)});
-        l.add(new Object[]{"Bluetooth", "bluetooth remote controller headphones speaker pair", "gamepad", settings(Settings.ACTION_BLUETOOTH_SETTINGS)});
+        l.add(new Object[]{"Bluetooth", "bluetooth remote controller headphones speaker pair", "bluetooth", (Runnable) a::openBluetoothSettings});
         l.add(new Object[]{"Sound", "sound audio volume speaker", "audio", settings("android.settings.SOUND_SETTINGS")});
         l.add(new Object[]{"Display", "display resolution screen picture", "present", settings(Settings.ACTION_DISPLAY_SETTINGS)});
         l.add(new Object[]{"Screen Saver", "screensaver dream ambient", "moon", settings("android.settings.DREAM_SETTINGS")});

@@ -3741,17 +3741,17 @@ public class MainActivity extends Activity {
         View mem = ccTile(grid, 0, y3, w, cap, "memory", "Memory", this::memoryState, false, null, v -> cleanMemory());
         addMemoryBar(mem);
         cells.add(mem);
-        // Round shortcuts: Inputs (TVs with inputs) or controllers, Accessibility, Settings, Refresh.
+        // Round shortcuts: Inputs or Accessibility, Bluetooth, Settings, Refresh.
         int y4 = y3 + cap + gap;
-        String[] g = inputs.isEmpty() ? new String[]{"gamepad", "accessibility", "gear", "refresh"}
-                : new String[]{"input", "gamepad", "gear", "refresh"};
-        String[] names = inputs.isEmpty() ? new String[]{"Controllers", "Accessibility", "Settings", "Refresh"}
-                : new String[]{"Inputs", "Controllers", "Settings", "Refresh"};
+        String[] g = inputs.isEmpty() ? new String[]{"bluetooth", "accessibility", "gear", "refresh"}
+                : new String[]{"input", "bluetooth", "gear", "refresh"};
+        String[] names = inputs.isEmpty() ? new String[]{"Bluetooth devices", "Accessibility", "Settings", "Refresh"}
+                : new String[]{"Inputs", "Bluetooth devices", "Settings", "Refresh"};
         for (int i = 0; i < g.length; i++) {
             String name = g[i];
             View r = ccTile(grid, i * (small + gap), y4, small, small, name, null, null, false, null, v -> {
                 switch (name) {
-                    case "gamepad": Suggestions.start(this, new Intent(Settings.ACTION_BLUETOOTH_SETTINGS)); break;
+                    case "bluetooth": openBluetoothSettings(); break;
                     case "accessibility": Suggestions.start(this, new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)); break;
                     case "input":
                         showInputs(ccButton);
@@ -3791,6 +3791,21 @@ public class MainActivity extends Activity {
 
     interface Status {
         String get();
+    }
+
+    /** Fire TV exposes its paired-device screen through an Amazon-specific action. */
+    void openBluetoothSettings() {
+        String amazonSettings = "com.amazon.tv.settings.v2";
+        if (Suggestions.start(this, new Intent("com.amazon.device.settings.action.INPUT_DEVICES")
+                .setPackage(amazonSettings))) return;
+        if (Suggestions.start(this, new Intent("com.amazon.device.settings.action.HURLEY")
+                .setPackage(amazonSettings))) return;
+        if (Suggestions.start(this, new Intent(Settings.ACTION_BLUETOOTH_SETTINGS))) return;
+        if (Suggestions.start(this, new Intent(Settings.ACTION_SETTINGS))) {
+            Toast.makeText(this, "Open Bluetooth devices in TV settings", Toast.LENGTH_LONG).show();
+        } else {
+            Toast.makeText(this, "Bluetooth settings unavailable", Toast.LENGTH_LONG).show();
+        }
     }
 
     interface Active {
