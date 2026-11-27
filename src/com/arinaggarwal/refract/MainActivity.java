@@ -790,9 +790,19 @@ public class MainActivity extends Activity {
     /** Keep time and profile visible; reveal the other controls while using the status row. */
     void setStatusExpanded(boolean expanded) {
         if (statusRow == null) return;
+        int visibility = expanded ? View.VISIBLE : View.GONE;
+        if (statusRow.get(0).getVisibility() == visibility) return;
+        if (statusBar != null && statusBar.isAttachedToWindow()) {
+            android.transition.TransitionSet transition = new android.transition.TransitionSet();
+            transition.setOrdering(android.transition.TransitionSet.ORDERING_TOGETHER);
+            transition.addTransition(new android.transition.ChangeBounds());
+            transition.addTransition(new android.transition.Fade());
+            transition.setDuration(260);
+            transition.setInterpolator(EASE);
+            android.transition.TransitionManager.beginDelayedTransition(root, transition);
+        }
         for (int i = 0; i < statusRow.size() - 1; i++) {
             View button = statusRow.get(i);
-            int visibility = expanded ? View.VISIBLE : View.GONE;
             if (button.getVisibility() != visibility) button.setVisibility(visibility);
         }
         if (netIcon != null) netIcon.setVisibility(expanded ? View.VISIBLE : View.GONE);
@@ -1779,12 +1789,11 @@ public class MainActivity extends Activity {
         heroOverview.setVisibility(View.GONE);
         heroButton.setVisibility(View.GONE);
         FrameLayout.LayoutParams ilp = new FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.TOP | Gravity.START);
-        // Reference: title starts about 4% from the left, below the weather capsule.
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.BOTTOM | Gravity.START);
         int room = dp(12);
         heroInfo.setPadding(room, room, room, room);
         ilp.leftMargin = side - room;
-        ilp.topMargin = dp(76) - room;
+        ilp.bottomMargin = dp(40) - room;
         root.addView(heroInfo, ilp);
         heroInfo.setTranslationY(heroInfoRestY());
 
@@ -1890,9 +1899,9 @@ public class MainActivity extends Activity {
         return out;
     }
 
-    /** The info block rests in the upper-left corner. */
+    /** Rest the info block just above the dock. */
     float heroInfoRestY() {
-        return 0;
+        return -(screenH - shelfH) + dp(40) - dp(36);
     }
 
     /** The page dots sit above the dock. */
