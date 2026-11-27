@@ -1,6 +1,6 @@
-# Your custom Refract: build, migrate once, update forever
+# Your custom Aether: build, migrate once, update forever
 
-Permanent application ID: `com.arinaggarwal.refract`. TV label: **Refract Custom**.
+Permanent application ID: `com.arinaggarwal.refract`. TV label: **Aether Launcher**.
 Original installation: `com.hydrainnit.refract`. It was backed up and later uninstalled on the user's Cube. Do not change the custom
 package ID or signing certificate after installing it. This fork retains minSdk 24, targetSdk 34,
 plain Java/Dex with no native libraries, and v1/v2 signing. The Cube 3rd gen on Fire OS 7 uses

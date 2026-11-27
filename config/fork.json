@@ -1,7 +1,7 @@
 {
   "applicationId": "com.arinaggarwal.refract",
-  "label": "Refract Custom",
-  "repository": "arinaggarwal1/refract-launcher",
+  "label": "Aether Launcher",
+  "repository": "arinaggarwal1/aether-launcher",
   "keyAlias": "refract-custom",
   "buildTools": "36.0.0",
   "compileSdk": 35,

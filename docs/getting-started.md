@@ -1,6 +1,6 @@
-# Getting started: build and run Refract Launcher
+# Getting started: build and run Aether Launcher
 
-From a fresh machine to Refract running on a TV (or the Android TV emulator) in about 20 minutes. No
+From a fresh machine to Aether running on a TV (or the Android TV emulator) in about 20 minutes. No
 Android Studio or Gradle needed: the project builds with the plain Android SDK command-line tools.
 
 ## 1. What you need
@@ -52,7 +52,7 @@ Put `ANDROID_HOME` (and `JAVA_HOME` if `javac` isn't on your `PATH`) in your she
 ## 3. Get the code and build
 
 ```sh
-git clone https://github.com/arinaggarwal1/refract-launcher.git
+git clone https://github.com/arinaggarwal1/aether-launcher.git
 cd refract-launcher
 ./build.sh                                                 # → build/refract-custom.apk
 ./build.sh --name 1.0.0-custom.1                          # optional display version
@@ -65,7 +65,7 @@ required one-time signing/GitHub setup and Fire TV migration. Ordinary builds ne
 
 ## 4. Run it on a TV
 
-For the personal Fire TV Cube, Refract Custom is already installed and is already Home. For an
+For the personal Fire TV Cube, Aether Launcher is already installed and is already Home. For an
 in-place update, follow [Updating your launcher](updating-your-launcher.md); do not repeat migration
 or change Amazon component states. On another device, use [Install and setup](install.md).
 
@@ -120,7 +120,7 @@ Open any screen without clicking through the UI:
 | `adb -s TV_SERIAL shell am start -n com.arinaggarwal.refract/.SettingsActivity --es tmdb_token <key>` | Sets a TMDB key |
 | `adb -s TV_SERIAL shell am start -n com.arinaggarwal.refract/.MainActivity --es perf weather` | Hides one layer to measure its GPU cost (`status`, `hero`, `dockglass`, `shadows`; `reset` restores) |
 
-Useful logs: `adb -s TV_SERIAL logcat -s TvHome` (Refract's own messages) and
+Useful logs: `adb -s TV_SERIAL logcat -s TvHome` (Aether's own messages) and
 `adb -s TV_SERIAL shell dumpsys gfxinfo com.arinaggarwal.refract` (frame times; see CONTRIBUTING.md).
 
 ## Troubleshooting
@@ -131,5 +131,5 @@ Useful logs: `adb -s TV_SERIAL logcat -s TvHome` (Refract's own messages) and
 | `javac not found` | Install JDK 17+ or set `JAVA_HOME` |
 | `INSTALL_FAILED_UPDATE_INCOMPATIBLE` | The installed copy was signed with a different key (e.g. a release build): restore the permanent signing key and rebuild; do not uninstall or clear settings |
 | `adb: device offline` / `unauthorized` | Accept the prompt on the TV; `adb disconnect TV_IP:5555` then `adb connect TV_IP:5555` again |
-| Home button still opens the old launcher | Finish setup's *Make Refract the Home Screen*, or see install.md |
+| Home button still opens the old launcher | Finish setup's *Make Aether the Home Screen*, or see install.md |
 | Install over Wi-Fi is very slow | Normal for 1 MB+ over a busy network; it finishes — don't wrap it in fixed sleeps |

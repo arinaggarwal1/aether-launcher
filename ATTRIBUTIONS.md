@@ -1,13 +1,13 @@
 # Attributions
 
-Refract Launcher stands on other people's work. The same credits are on the TV in
+Aether Launcher builds on other people's work. The same credits are on the TV in
 **Settings → About → Attributions**, and each photograph is credited on screen while it is shown.
 
 ## Original software
 
 **Hume Launcher** by **Petrobot**, Copyright 2026 Petrobot, licensed under the
-[Apache License 2.0](LICENSE). Refract Launcher is a fork of Hume Launcher; the original licence
-and [NOTICE](NOTICE) are kept unchanged and Refract's changes are released under the same licence.
+[Apache License 2.0](LICENSE). Aether builds on Refract Launcher by Hydrainnit, itself a fork of Hume Launcher. The original
+licence and [NOTICE](NOTICE) are retained and changes are released under the same licence.
 Original repository: <https://github.com/petrobot-admin/hume-launcher>. Thank you, Petrobot.
 
 ## Fonts and code
@@ -97,5 +97,6 @@ licence does not allow.
 
 ## Brand
 
-The Refract name, glass-prism logo and TV banner are original artwork for this fork (wordmark set in Inter Display Bold and Thin, SIL OFL 1.1), drawn with
-[tools/brand.py](tools/brand.py).
+The previous Refract glass-prism branding was created by Hydrainnit. The Aether logo was created
+for this personal fork; the TV banner uses Inter Display Bold and Thin (SIL OFL 1.1). Android and
+documentation assets are generated from the approved logo with [tools/brand.py](tools/brand.py).

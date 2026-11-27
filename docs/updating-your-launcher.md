@@ -1,4 +1,4 @@
-# Updating your Refract launcher
+# Updating your Aether launcher
 
 Your custom launcher is already installed on the Fire TV Cube as
 `com.arinaggarwal.refract`. Future updates install over that same app and keep its settings,
@@ -27,7 +27,7 @@ on the TV is a separate step: explicitly ask Codex to install the update when yo
 
 Once the version containing the updater has been installed, open **Settings > About > Check for
 Updates**. If a newer GitHub release is available, choose **Download**, then **Install**. The TV
-will show its own installation confirmation. If asked, allow Refract Custom under the TV's
+will show its own installation confirmation. If asked, allow Aether Launcher under the TV's
 **Install unknown apps** setting, return to About, and choose **Check for Updates** again to install.
 Your folders and settings stay in place.
 

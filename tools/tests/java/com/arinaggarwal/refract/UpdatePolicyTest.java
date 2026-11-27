@@ -11,6 +11,9 @@ public class UpdatePolicyTest {
     public static void main(String[] args) {
         String ok = "https://github.com/arinaggarwal1/refract-launcher/releases/download/v1/release.json";
         yes(UpdatePolicy.releaseAssetUrl(ok));
+        yes(UpdatePolicy.releaseAssetUrl("https://github.com/arinaggarwal1/aether-launcher/releases/download/v1/release.json"));
+        no(UpdatePolicy.releaseAssetUrl("https://github.com/other/aether-launcher/releases/download/v1/release.json"));
+        no(UpdatePolicy.releaseAssetUrl("https://github.com/arinaggarwal1/aether-launcher-evil/releases/download/v1/release.json"));
         no(UpdatePolicy.releaseAssetUrl("https://github.com/other/refract-launcher/releases/download/v1/release.json"));
         no(UpdatePolicy.releaseAssetUrl("https://github.com.evil.example/arinaggarwal1/refract-launcher/releases/download/x"));
         no(UpdatePolicy.releaseAssetUrl("http://github.com/arinaggarwal1/refract-launcher/releases/download/x"));

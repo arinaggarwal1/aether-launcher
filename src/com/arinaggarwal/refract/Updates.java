@@ -19,7 +19,7 @@ import javax.net.ssl.HttpsURLConnection;
 
 /** Fetches public release assets and validates them before the OS installer sees an APK. */
 final class Updates {
-    static final String LATEST = "https://api.github.com/repos/arinaggarwal1/refract-launcher/releases/latest";
+    static final String LATEST = "https://api.github.com/repos/arinaggarwal1/aether-launcher/releases/latest";
     static final int MAX_JSON = 512 * 1024;
 
     static final class NoRelease extends Exception { }

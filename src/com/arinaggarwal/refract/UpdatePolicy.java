@@ -8,7 +8,10 @@ final class UpdatePolicy {
     static final String PACKAGE = "com.arinaggarwal.refract";
     static final String CERT = "c2810322898575eba8240544dde1fa4dbe87a7ca1d926951d81ceef9c44bdce5";
     static final long MAX_APK = 100L * 1024 * 1024;
-    private static final String RELEASE_PATH = "/arinaggarwal1/refract-launcher/releases/download/";
+    private static final String[] RELEASE_PATHS = {
+            "/arinaggarwal1/refract-launcher/releases/download/",
+            "/arinaggarwal1/aether-launcher/releases/download/"
+    };
 
     private UpdatePolicy() { }
 
@@ -31,10 +34,12 @@ final class UpdatePolicy {
         try {
             URI u = new URI(url);
             String path = u.getPath();
-            if (!trustedUrl(url) || !"github.com".equalsIgnoreCase(u.getHost())
-                    || path == null || !path.startsWith(RELEASE_PATH)
+            if (!trustedUrl(url) || !"github.com".equalsIgnoreCase(u.getHost()) || path == null
                     || path.indexOf('\\') >= 0 || u.getRawQuery() != null || u.getRawFragment() != null)
                 return false;
+            boolean allowed = false;
+            for (String prefix : RELEASE_PATHS) if (path.startsWith(prefix)) { allowed = true; break; }
+            if (!allowed) return false;
             for (String segment : path.split("/")) if (segment.equals(".") || segment.equals("..")) return false;
             return true;
         } catch (Exception e) {

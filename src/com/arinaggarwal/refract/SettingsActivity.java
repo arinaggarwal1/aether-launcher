@@ -218,7 +218,7 @@ public class SettingsActivity extends Activity {
 
         if (p.equals(ROOT)) {
             TextView by = new TextView(this);
-            by.setText("Refract Launcher \u00b7 Made by Hydrainnit");
+            by.setText("Aether Launcher");
             by.setTextColor(theme.textDim);
             by.setTypeface(Ui.font(this, "regular"));
             Ui.textSize(by, 13);
@@ -589,7 +589,7 @@ public class SettingsActivity extends Activity {
     }
 
     void pageHome() {
-        row("Home screen", () -> Perms.isDefaultHome(this) ? "Refract Launcher" : "Make Refract the home screen\u2026",
+        row("Home screen", () -> Perms.isDefaultHome(this) ? "Aether Launcher" : "Make Aether the home screen\u2026",
                 () -> Perms.requestDefaultHome(this));
         row("Background", this::backgroundName, () -> show(BACKGROUND));
         row("Navigation sounds", () -> Clicks.enabled(this) ? "On" : "Off",
@@ -609,20 +609,19 @@ public class SettingsActivity extends Activity {
                 () -> Perms.requestListener(this));
         row("Power Off & Sleep Timer", () -> Perms.hasAdmin(this) ? "Allowed"
                 : Perms.adminSupported(this) ? "Allow\u2026" : "Not on this TV", () -> Perms.requestAdmin(this));
-        row("Refract as the home screen", () -> Perms.isDefaultHome(this) ? "Yes" : "Set\u2026",
+        row("Aether as the home screen", () -> Perms.isDefaultHome(this) ? "Yes" : "Set\u2026",
                 () -> Perms.requestDefaultHome(this));
         row("Wi-Fi name in Control Center", () -> Perms.hasLocation(this) ? "Allowed" : "Allow\u2026",
                 () -> Perms.requestLocation(this));
     }
 
     void pageAbout() {
-        row("Refract Launcher", () -> "Version " + version(), () -> { });
+        row("Aether Launcher", () -> "Version " + version(), () -> { });
         row("Check for Updates", () -> readyUpdate == null ? "" : "Ready to install", () -> {
             if (readyUpdate != null) offerUpdateInstall(readyUpdate);
             else checkForUpdates();
         });
-        row("Made by", () -> "Hydrainnit", () -> { });
-        row("Based on", () -> "Hume Launcher by Petrobot", () -> show(ATTRIB));
+        row("Based on", () -> "Refract and Hume", () -> show(ATTRIB));
         row("Weather", () -> Weather.sourceName(Weather.source(this)), () -> { });
         row("News", () -> News.sources(this).size() + " newsrooms", () -> { });
         nav(ATTRIB, () -> "Credits & licences");
@@ -724,14 +723,14 @@ public class SettingsActivity extends Activity {
 
     void offerUpdateInstall(Updates.Release release) {
         if (android.os.Build.VERSION.SDK_INT >= 26 && !getPackageManager().canRequestPackageInstalls()) {
-            dialog("Allow Updates").setMessage("Allow Refract Custom to install apps in TV settings. "
+            dialog("Allow Updates").setMessage("Allow Aether Launcher to install apps in TV settings. "
                     + "Then return here and select Check for Updates to install.")
                     .setPositiveButton("Open TV Settings", (d, w) -> {
                         try {
                             startActivity(new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
                                     android.net.Uri.parse("package:" + getPackageName())));
                         } catch (android.content.ActivityNotFoundException | SecurityException e) {
-                            updateMessage("Open TV Settings", "Open your TV's settings and allow Refract Custom "
+                            updateMessage("Open TV Settings", "Open your TV's settings and allow Aether Launcher "
                                     + "under Install unknown apps. Then return to Check for Updates.");
                         }
                     }).setNegativeButton("Not Now", null).show();
@@ -1304,7 +1303,7 @@ public class SettingsActivity extends Activity {
     String idleName() {
         if (screensaverAllowed()) return "System screensaver";
         return Ambient.IDLE_AMBIENT.equals(Ambient.prefs(this).getString(Ambient.K_IDLE, Ambient.IDLE_CAROUSEL))
-                ? "Refract Ambient" : "Refract carousel";
+                ? "Aether Ambient" : "Aether carousel";
     }
 
     void choice(String label, String key, String def, String[] keys, String[] names) {
@@ -1345,9 +1344,9 @@ public class SettingsActivity extends Activity {
 
     void pageScreensaver() {
         row("When Home is idle", this::idleName, () -> {
-            String[] names = {"Refract Ambient  (photos or movies with a clock)", "Refract full-screen carousel",
+            String[] names = {"Aether Ambient  (photos or movies with a clock)", "Aether full-screen carousel",
                     "System screensaver  (" + dreamLabel() + ")"};
-            int sel = screensaverAllowed() ? 2 : idleName().equals("Refract Ambient") ? 0 : 1;
+            int sel = screensaverAllowed() ? 2 : idleName().equals("Aether Ambient") ? 0 : 1;
             dialog("When Home is idle").setSingleChoiceItems(names, sel, (d, w) -> {
                 getSharedPreferences("screensaver", MODE_PRIVATE).edit().putBoolean("allow", w == 2).apply();
                 Ambient.prefs(this).edit().putString(Ambient.K_IDLE, w == 0 ? Ambient.IDLE_AMBIENT : Ambient.IDLE_CAROUSEL).apply();
@@ -1369,11 +1368,11 @@ public class SettingsActivity extends Activity {
                 d.dismiss();
             }).show();
         });
-        row("Preview Refract Ambient", () -> "", () -> {
+        row("Preview Aether Ambient", () -> "", () -> {
             startActivity(new Intent(this, MainActivity.class).putExtra("panel", "ambient").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
             finish();
         });
-        section("Refract Ambient");
+        section("Aether Ambient");
         choice("Show", "mode", Ambient.PHOTOS, Ambient.MODES, Ambient.MODE_NAMES);
         row("Photo category", () -> Ambient.prefs(this).getBoolean("follow", true) ? "Same as background"
                 : Wallpapers.categoryName(this, Ambient.prefs(this).getString("category", Wallpapers.category(this))), () -> {
@@ -1424,7 +1423,7 @@ public class SettingsActivity extends Activity {
         toggle("Date", "clock_date", true);
         section("System screensaver");
         row("Screensaver", () -> dreamLabel(), this::openDreamSettings);
-        note("To use Refract Ambient as the TV's own screensaver, choose \u201cRefract Ambient\u201d there.");
+        note("To use Aether Ambient as the TV's own screensaver, choose \u201cAether Ambient\u201d there.");
         row("Start screensaver now", () -> "", () -> {
             Intent i = new Intent(Intent.ACTION_MAIN).setClassName("com.android.systemui", "com.android.systemui.Somnambulator")
                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -1438,7 +1437,7 @@ public class SettingsActivity extends Activity {
     void pageAttributions() {
         section("Original software");
         credit("Hume Launcher", "Petrobot",
-                "Refract Launcher is a fork of Hume Launcher, Copyright 2026 Petrobot, licensed under the Apache License 2.0. "
+                "Aether Launcher is based on Refract Launcher by Hydrainnit and Hume Launcher, Copyright 2026 Petrobot, licensed under the Apache License 2.0. "
                         + "The original licence and NOTICE are kept in the source. Thank you, Petrobot.");
         section("Fonts & code");
         credit("Inter typeface", "The Inter Project Authors \u00b7 OFL 1.1", "SIL Open Font License 1.1 (assets/fonts/Inter-LICENSE.txt).");
@@ -1458,7 +1457,7 @@ public class SettingsActivity extends Activity {
         credit("wttr.in", "Weather", "Weather from wttr.in by Igor Chubin.");
         credit("Newsrooms", News.sources(this).size() + " sources", "Headlines link to and belong to their publishers.");
         section("Brand");
-        credit("Refract logo & banner", "Hydrainnit", "Original artwork for Refract Launcher (tools/brand.py).");
+        credit("Aether logo", "Aether Launcher", "Aether branding artwork (tools/brand.py).");
     }
 
     void credit(String name, String by, String detail) {

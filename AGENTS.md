@@ -1,4 +1,7 @@
-# Personal Refract fork
+# Aether Launcher (personal Refract fork)
+
+- The chosen product name is **Aether Launcher**. Keep the existing application ID, signing,
+  and storage identities stable when applying any future branding changes.
 
 - Permanent application ID: `com.arinaggarwal.refract`. Source lives in
   `src/com/arinaggarwal/refract`. Keep the package, signing identity, and profile/preference storage

@@ -451,7 +451,7 @@ final class SearchPanel {
         l.add(new Object[]{"Control Center", "controls power sleep", "controls", (Runnable) () -> { close(); a.showControlCenter(); }});
         l.add(new Object[]{"Weather Forecast", "weather temperature rain", "refresh", (Runnable) () -> { close(); a.showWeather(); }});
         l.add(new Object[]{"Switch Profile", "profile user who", "controls", (Runnable) () -> { close(); a.showProfilePicker(false); }});
-        l.add(new Object[]{"Refract Settings", "settings launcher preferences", "gear", (Runnable) () -> {
+        l.add(new Object[]{"Aether Settings", "settings launcher preferences", "gear", (Runnable) () -> {
             a.returningFromSettings = true;
             a.startActivity(new Intent(a, SettingsActivity.class));
         }});

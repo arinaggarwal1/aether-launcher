@@ -1,6 +1,6 @@
 # Documentation
 
-Find the right guide for what you want to do with Refract Custom.
+Find the right guide for what you want to do with Aether Launcher.
 
 ## Use the launcher
 

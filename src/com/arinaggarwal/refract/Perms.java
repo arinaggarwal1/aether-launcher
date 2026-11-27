@@ -16,7 +16,7 @@ import android.provider.Settings;
  * - Location (Wi-Fi name): the normal runtime prompt.
  * - Device admin (Power Off, Sleep Timer): Android's "Activate device admin app?" screen.
  * - Notification access (Continue Watching, Do Not Disturb): the system's notification-access
- *   screen (Android 11+ opens Refract's own switch directly).
+ *   screen (Android 11+ opens Aether's own switch directly).
  * Some TVs (e.g. Android 9 builds) have no screen for the last two; only then is the
  * one-time computer command shown.
  */
@@ -89,8 +89,8 @@ final class Perms {
         Intent acc = accessibilityScreen(a);
         new AlertDialog.Builder(a, android.R.style.Theme_DeviceDefault_Dialog_Alert)
                 .setTitle("Close apps fully")
-                .setMessage("Android only lets Refract free background memory. To close apps the way Force stop does, "
-                        + "choose \u201cRefract Launcher \u2013 Power Off\u201d in the next screen and turn it on.")
+                .setMessage("Android only lets Aether free background memory. To close apps the way Force stop does, "
+                        + "choose \u201cAether Launcher \u2013 Power Off\u201d in the next screen and turn it on.")
                 .setPositiveButton("Open Accessibility", (d, w) -> tryStart(a, acc))
                 .setNegativeButton("Not Now", null).show();
     }
@@ -110,8 +110,8 @@ final class Perms {
             Intent acc = accessibilityScreen(a);
             new AlertDialog.Builder(a, android.R.style.Theme_DeviceDefault_Dialog_Alert)
                     .setTitle("Turn on Power Off")
-                    .setMessage("In the next screen, choose \u201cRefract Launcher \u2013 Power Off\u201d and turn it on. "
-                            + "It only lets Refract put the TV to sleep and close apps.")
+                    .setMessage("In the next screen, choose \u201cAether Launcher \u2013 Power Off\u201d and turn it on. "
+                            + "It only lets Aether put the TV to sleep and close apps.")
                     .setPositiveButton("Open Accessibility", (d, w) -> tryStart(a, acc))
                     .setNegativeButton("Cancel", null).show();
             return;
@@ -119,7 +119,7 @@ final class Perms {
         Intent i = new Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN)
                 .putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, admin(a))
                 .putExtra(DevicePolicyManager.EXTRA_ADD_EXPLANATION,
-                        "Lets Refract Launcher turn the screen off for Power Off and the Sleep Timer. It can't do anything else.");
+                        "Lets Aether Launcher turn the screen off for Power Off and the Sleep Timer. It can't do anything else.");
         if (tryStart(a, i)) return;
         lastResort(a, "Power Off & Sleep Timer",
                 "adb -s TV_SERIAL shell 'dpm set-active-admin \"com.arinaggarwal.refract/.SleepReceiver\\$Admin\"'");

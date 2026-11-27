@@ -424,8 +424,8 @@ public class MainActivity extends Activity {
         if (SetupActivity.done(this) && !Perms.isDefaultHome(this) && !prefs.getBoolean("asked_default_home", false)) {
             prefs.edit().putBoolean("asked_default_home", true).apply();
             new AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
-                    .setTitle("Make Refract your home screen?")
-                    .setMessage("The Home button on the remote will open Refract Launcher.")
+                    .setTitle("Make Aether your home screen?")
+                    .setMessage("The Home button on the remote will open Aether Launcher.")
                     .setPositiveButton("Make Home Screen", (d, w) -> Perms.requestDefaultHome(this))
                     .setNegativeButton("Not Now", null).show();
         }
@@ -669,7 +669,7 @@ public class MainActivity extends Activity {
 
         moviesButton = pillButton("film", btn, "Movies", this::showMovies);
         searchButton = pillButton("search", btn, "Search", () -> showSearch(null));
-        settingsButton = pillButton("gear", btn, "Refract Settings", this::openRefractSettings);
+        settingsButton = pillButton("gear", btn, "Aether Settings", this::openRefractSettings);
         ccButton = pillButton("controls", btn, "Control Center", this::showControlCenter);
 
         int av = btn;
@@ -4308,7 +4308,7 @@ public class MainActivity extends Activity {
             } else {
                 // Without the accessibility switch Android only drops background memory; apps that
                 // are playing or have a running service stay open, so don't claim they closed.
-                toast("Freed background memory" + mb + ". To close apps fully, turn on Refract\u2019s Power Off switch.");
+                toast("Freed background memory" + mb + ". To close apps fully, turn on Aether\u2019s Power Off switch.");
                 if (!getSharedPreferences("clean", MODE_PRIVATE).getBoolean("asked_force", false)) {
                     getSharedPreferences("clean", MODE_PRIVATE).edit().putBoolean("asked_force", true).apply();
                     Perms.requestForceStop(this);
@@ -4813,7 +4813,7 @@ public class MainActivity extends Activity {
     /** Seconds without input before the dock slides away (Settings -> Home); 0 = never. */
     int idleSeconds() {
         int sec = Profiles.homePrefs(this).getInt("idle_sec", 20);
-        // Refract carousel chosen as the screensaver: it always takes over when idle.
+        // Aether carousel chosen as the screensaver: it always takes over when idle.
         if (sec == 0 && !getSharedPreferences("screensaver", MODE_PRIVATE).getBoolean("allow", true)) sec = 20;
         return sec;
     }
@@ -4892,7 +4892,7 @@ public class MainActivity extends Activity {
         resetIdle();
     }
 
-    /** Refract Ambient chosen for idle Home (Settings \u2192 Screensaver): the photo/movie clock screen. */
+    /** Aether Ambient chosen for idle Home (Settings \u2192 Screensaver): the photo/movie clock screen. */
     Ambient idleAmbient;
 
     boolean ambientIdle() {

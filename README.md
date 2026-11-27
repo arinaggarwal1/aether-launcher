@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="docs/images/refract-banner.png" alt="Refract Launcher" width="720">
+  <img src="docs/images/refract-banner.png" alt="Aether Launcher" width="720">
 </p>
 
-<h1 align="center">Refract Custom</h1>
+<h1 align="center">Aether Launcher</h1>
 
 <p align="center">
   A personal Android TV launcher with a tvOS-inspired Home screen, glass controls,
@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/arinaggarwal1/refract-launcher/releases/latest">Download a release</a>
+  <a href="https://github.com/arinaggarwal1/aether-launcher/releases/latest">Download a release</a>
   &nbsp; · &nbsp;
   <a href="docs/features.md">Explore features</a>
   &nbsp; · &nbsp;
@@ -21,9 +21,9 @@
 
 <p align="center"><strong>Android 7.0+ (API 24)</strong> · Java 11 · No Gradle or third-party runtime libraries</p>
 
-![Refract Home screen with the dock, carousel, weather and status row](docs/images/refract-home.jpg)
+![Aether Home screen with the dock, carousel, weather and status row](docs/images/refract-home.jpg)
 
-Refract Custom is a personal fork of **Refract Launcher by Hydrainnit**, itself based on
+Aether Launcher is a personal fork of **Refract Launcher by Hydrainnit**, itself based on
 [Hume Launcher](https://github.com/petrobot-admin/hume-launcher) by Petrobot. It brings a
 TV-friendly dock, personalized content, search, and device controls together on one Home screen.
 This fork uses the separate application ID **`com.arinaggarwal.refract`** and its own permanent
@@ -48,10 +48,10 @@ signing identity. It is not an in-place update for the original launcher.
 | Search | Settings |
 | ![Search](docs/images/refract-search.jpg) | ![Settings](docs/images/refract-settings.jpg) |
 
-*These screenshots come from the Android TV emulator and may show earlier interface versions.
+*These screenshots come from the Android TV emulator and show earlier Refract branding.
 Artwork belongs to its respective owners and is fetched at runtime.*
 
-## Using Refract
+## Using Aether
 
 Navigate with the D-pad and press **OK** to select. Hold OK on an app for its options, including
 moving it or adding it to a folder. Hold **Back** on Home to open Search; a short press goes back.
@@ -78,7 +78,7 @@ browser uploads and playback, see [Presentation mode](docs/presentation.md).
 
 On the TV, open **Settings → About → Check for Updates**, download an available release, and
 confirm installation in the system installer. The updater checks the release metadata, package,
-checksum, and signing certificate. If asked, allow Refract to install unknown apps in TV settings.
+checksum, and signing certificate. If asked, allow Aether to install unknown apps in TV settings.
 
 An in-place update with the same package and signing key keeps the launcher's app data, including
 profiles, layouts, preferences, and Keystore-backed API keys. Do not uninstall or clear data to
@@ -87,19 +87,20 @@ TV-side and computer-assisted paths, troubleshooting, and recovery.
 
 ### First install
 
-Download `refract-custom.apk` from [Releases](https://github.com/arinaggarwal1/refract-launcher/releases)
+Download `refract-custom.apk` from [Releases](https://github.com/arinaggarwal1/aether-launcher/releases)
 and install it through a method supported by your device. Follow the on-screen setup and the
 [install guide](docs/install.md) for Home selection and optional permissions. Availability of Home
 selection and permissions varies by TV and firmware.
 
-**Your Fire TV Cube:** Refract Custom is already installed and selected as Home. The original
+**Your Fire TV Cube:** The same custom package is already installed and selected as Home. It will
+show the Aether name and logo after an update containing this branding is installed. The original
 `com.hydrainnit.refract` was uninstalled after backup, so the old rollback command alone cannot
 restore it. Do not repeat the historical migration or change the already-disabled Amazon Home
 components. [Details and recovery](docs/custom-updates.md).
 
 ## What root adds
 
-Root is **not required** for Refract's ordinary Home screen, Control Center, search, or presentation
+Root is **not required** for Aether's ordinary Home screen, Control Center, search, or presentation
 features. Android permissions and the device's own capabilities still determine what is available.
 The launcher itself does not automatically request root.
 
@@ -168,7 +169,7 @@ The [documentation index](docs/README.md) groups all guides by task.
 
 ## Credits & license
 
-Refract builds on Hydrainnit's Refract Launcher and Petrobot's Hume Launcher. It includes the
+Aether builds on Hydrainnit's Refract Launcher and Petrobot's Hume Launcher. It includes the
 Inter typeface and Nayuki's QR code generator, and uses third-party content and data services.
 See [ATTRIBUTIONS.md](ATTRIBUTIONS.md) for authors, licenses, image credits, and data sources.
 

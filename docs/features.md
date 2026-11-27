@@ -1,6 +1,6 @@
 # Features
 
-Everything Refract Launcher does, by area. For how the code is organised see
+Everything Aether Launcher does, by area. For how the code is organised see
 [architecture.md](architecture.md); to build it yourself see [getting-started.md](getting-started.md).
 
 - [First-time setup](#first-time-setup)
@@ -12,7 +12,7 @@ Everything Refract Launcher does, by area. For how the code is organised see
 
 ## First-time setup
 
-The first time Refract opens it walks through Apple-style pages, one question each (OK moves on, Back
+The first time Aether opens it walks through Apple-style pages, one question each (OK moves on, Back
 goes back):
 
 1. **Welcome**, fading through Indian and world languages, then *Get Started*.
@@ -21,7 +21,7 @@ goes back):
 4. **Your Home Screen** (this profile): Recommendations, News and Continue Watching on/off.
 5. **Weather**: use my location (shows the detected city), choose a city, or don't show weather.
 6. **Presentation** (whole TV): use Presentation; if on, *Start with the TV* and *Keep Screen Awake*.
-7. **Finish Setting Up**: Android's location prompt appears at once; make Refract the home screen and
+7. **Finish Setting Up**: Android's location prompt appears at once; make Aether the home screen and
    allow whatever else the TV supports (each ticks when done; unsupported ones are left out).
 8. **You're All Set** → Home.
 
@@ -57,13 +57,13 @@ screen. The installed version must include the updater.
   including Settings, Inputs and Presentation. Hidden apps stay available in the More Apps folder;
   **Show on Home Screen** brings them back. Each profile keeps its own choices.
 - **Device Settings** appears on Home by default and opens the TV's own Settings app. It can be
-  moved or hidden like other apps; Refract Settings remains available in the status row.
+  moved or hidden like other apps; Aether Settings remains available in the status row.
 - **App images**: hold OK on an app and select **Change Image**. Keep the instructions open
   while you scan the QR code with your phone or open the displayed address on a computer on
   the same network. Choose an
-  image and send it to the TV. Refract stores a private copy shared across profiles. Select
+  image and send it to the TV. Aether stores a private copy shared across profiles. Select
   **Return to Default Image** to restore the app's usual card and delete the saved custom image.
-  Xtra TV includes a Refract design by default. App updates do not replace custom images.
+  Xtra TV includes a Aether design by default. App updates do not replace custom images.
 - **System apps** (Settings, Play Store…) get tvOS-style cards: a gradient with a white glyph.
   Fire TV Settings uses a silver gear card; Amazon Appstore uses a white shopping bag with an
   orange smile on blue. Custom app images take priority over these defaults.
@@ -79,7 +79,7 @@ screen. The installed version must include the updater.
 | Dock | Up | Carousel |
 | Carousel | Left / Right | Previous / next item (wraps around) |
 | Carousel (Continue Watching item) | Right | Moves from **Resume** to **Remove** |
-| Status row | Left / Right | Weather ⇄ Movies ⇄ Search ⇄ Refract Settings ⇄ Control Center ⇄ avatar |
+| Status row | Left / Right | Weather ⇄ Movies ⇄ Search ⇄ Aether Settings ⇄ Control Center ⇄ avatar |
 | Anywhere on Home | Hold Back for 1 second | Opens Search (a short press of Back works as before) |
 | Anywhere on Home (and the idle screen) | Voice / mic / Search key on the remote | The voice flow: edge glow, then the TV's assistant, else Search with dictation. Many TVs give `ASSIST`/`VOICE_ASSIST` straight to Google Assistant before any app sees it |
 | Now Playing pill | OK | Back to the app that is playing |
@@ -113,7 +113,7 @@ works. Hold Back on Home to open Search; press Back to return.
   Voice capabilities depend on the TV's installed keyboard and speech service.
 - **Before typing**: your recent searches (per profile) and what's trending in the carousel.
 - **Apps & Settings** (instant, no internet): installed apps including hidden ones, TV inputs
-  ("HDMI 2"), Refract screens (Control Center, Weather, Switch Profile, Refract Settings) and TV settings
+  ("HDMI 2"), Aether screens (Control Center, Weather, Switch Profile, Aether Settings) and TV settings
   ("wifi", "bluetooth", "screensaver"…).
 - **Movies & TV**: every title on any streaming service in India from JustWatch — Hindi and
   regional titles included, and searches typed in Hindi (पंचायत) work — as posters with the logos
@@ -123,7 +123,7 @@ works. Hold Back on Home to open Search; press Back to return.
   summary) with a button per app: **▶ Open in …** for apps you have (straight to the title where
   the app allows it) and **Get …** for the rest (the app's Play Store page), each marked
   *Subscription*, *Free*, *Free with ads*, *Rent* or *Buy*.
-- **Any service, no list**: Refract matches each service to its app itself — the app named in the
+- **Any service, no list**: Aether matches each service to its app itself — the app named in the
   service's Android TV link, an installed app that opens the service's website, or an installed
   app with the same name — so new services work without an update.
 - Settings → Content & Search: turn Movies & TV results off, or clear recent searches. Searches go
@@ -250,8 +250,8 @@ loop, optionally starting with the TV (signage). See **[presentation.md](present
 
 ## Screensaver
 
-Refract never holds the screen on, so the TV's own screensaver (e.g. Aerial Views) starts after the
-TV's timeout. Settings → Home → **Screensaver on Home**: *System screensaver* (default) or *Refract
+Aether never holds the screen on, so the TV's own screensaver (e.g. Aerial Views) starts after the
+TV's timeout. Settings → Home → **Screensaver on Home**: *System screensaver* (default) or *Aether
 full-screen carousel*, which keeps the screen on and lets the carousel play instead. Also shows the
 TV's screensaver (opens its settings or app) and **Start screensaver now**.
 
@@ -261,11 +261,11 @@ Android TV can't receive AirPlay by itself. Install the free, open-source
 **[AirPlay Server](https://github.com/jqssun/android-airplay-server)** app
 (`io.github.jqssun.airplay`, GPL-3.0) and the TV shows up in AirPlay on Macs, iPhones and iPads for
 screen mirroring, video and audio. See [install.md](install.md#optional-airplay-receiver) to set it
-up. It appears in Refract like any other app.
+up. It appears in Aether like any other app.
 
 **AirPlay guard** (automatic, only when that app is installed): after long sleeps the AirPlay app
 can keep running without announcing itself, so the TV vanishes from AirPlay lists. On wake, when
-the network returns and every 15 minutes on Home, Refract asks the network (an mDNS query, as a Mac
+the network returns and every 15 minutes on Home, Aether asks the network (an mDNS query, as a Mac
 does) whether the receiver is visible; if not, it restarts the receiver's server through the app's
 settings receiver, or starts a stopped app through its start-up receiver. Nothing appears on screen.
 The receiver's name is set in the AirPlay app (e.g. "Mi Box").
@@ -288,15 +288,15 @@ remain available. Press Back to return to the previous group.
 
 ## Permissions
 
-Refract asks on screen wherever the TV allows it; adb is only a last resort.
+Aether asks on screen wherever the TV allows it; adb is only a last resort.
 
 | Feature | How it is granted |
 |---|---|
 | Wi-Fi name (location) | Android's permission prompt |
-| Continue Watching & Do Not Disturb | The system notification-access screen. Not possible on low-RAM (1 GB) TVs, where Android disables it — Refract says so |
-| Power Off & Sleep Timer | Android's "Activate device admin app?" screen; Fire TV devices with a dummy permission screen show a one-time ADB command instead. Where device admin is switched off (e.g. Mi Box), Refract's accessibility switch **Refract Launcher – Power Off** in the TV's Accessibility settings (opened for you). The same switch lets Clean close apps |
+| Continue Watching & Do Not Disturb | The system notification-access screen. Not possible on low-RAM (1 GB) TVs, where Android disables it — Aether says so |
+| Power Off & Sleep Timer | Android's "Activate device admin app?" screen; Fire TV devices with a dummy permission screen show a one-time ADB command instead. Where device admin is switched off (e.g. Mi Box), Aether's accessibility switch **Aether Launcher – Power Off** in the TV's Accessibility settings (opened for you). The same switch lets Clean close apps |
 | Search dictation (microphone) | Android's permission prompt the first time the mic is used; without it, the TV's voice prompt is used |
-| Home screen | Android 10+ "default home app" prompt, the TV's Home-app settings, or Android's chooser; Refract offers this once if another launcher is home |
+| Home screen | Android 10+ "default home app" prompt, the TV's Home-app settings, or Android's chooser; Aether offers this once if another launcher is home |
 
 Only when a TV has none of these screens is the one-time adb command shown.
 
@@ -307,7 +307,7 @@ proportions on 720p, 1080p and 4K and rebuilds itself if the display changes.
 
 ---
 
-# New in Refract
+# New in Aether
 
 ## Appearance (Light and Dark)
 
@@ -315,7 +315,7 @@ Setup's second page shows a Light and a Dark preview of Home. Focusing one resty
 once, and the choice is TV-wide (`appearance` prefs). Settings → Appearance changes it later.
 Light uses frosted white glass with dark text and lifts focused rows on a white plate with a
 shadow. Dark is the original smoked glass. Home, Control Center, Setup, Settings, the Movies tab
-and Refract Ambient all read the same tokens (`Theme.java`). Search and its How to Watch sheet are
+and Aether Ambient all read the same tokens (`Theme.java`). Search and its How to Watch sheet are
 still dark in both modes.
 
 ## Backgrounds
@@ -343,7 +343,7 @@ through the list previews the photo. Credits are available in Attributions.
   (about 1.5 MB). 4K is only sharper on TVs that draw apps in 4K; most Android TVs draw apps at
   1080p and scale up. Low-RAM TVs always decode at 1080p. Switching downloads the new quality and
   removes the old copies as they are replaced. The page shows how much space photos use.
-- **No internet and not downloaded yet:** Home shows Refract's gradient field and the screensaver
+- **No internet and not downloaded yet:** Home shows Aether's gradient field and the screensaver
   shows gradients (without a photo credit) until the photo can be fetched.
 
 ## Movies tab and Movies Home Theme
@@ -360,23 +360,23 @@ hidden while it is on; their settings are untouched and they come back when it i
 changes only when you move, unless you choose an interval. Without a TMDB key, both say so and
 offer Settings. Lists are cached for 6 hours and logos are cached permanently.
 
-## Refract Ambient (screensaver)
+## Aether Ambient (screensaver)
 
 Photos (cycling within a category, by default the background's), Movies (TMDB backdrops with
 logo, rating and date), a Single Photo, or Minimal (clock only). It shows an oversized
 glass-gradient clock, the weather, a description and the photo credit. Settings → Screensaver &
-Clock covers when it starts (Refract Ambient, the full-screen carousel, or the system screensaver),
+Clock covers when it starts (Aether Ambient, the full-screen carousel, or the system screensaver),
 interval, transition, reduce motion, burn-in drift (on by default: once a minute the clock, weather
 and text each glide to a new spot within ±18×12 dp of where they sit, a fade instead with Reduce
 Motion), dimming, and the clock: style (Cinematic, Centred, Minimal, Stacked, Analog), font,
 position (Top, Centre, Top Left, Top Right, Bottom Left, Bottom Right), size, opacity, letter
 spacing, nudge, 12/24-hour, seconds and date. It is also a real
-DreamService, so it can be the TV's own screensaver (TV Settings → Screen saver → *Refract
+DreamService, so it can be the TV's own screensaver (TV Settings → Screen saver → *Aether
 Ambient*).
 
 ## Status pill and Control Center
 
-The status row is a single floating glass pill: connection, time, Movies, Search, Refract Settings,
+The status row is a single floating glass pill: connection, time, Movies, Search, Aether Settings,
 Control Center and the profile avatar. Voice input is available through Search where the TV supports it.
 
 Control Center is one tinted glass panel: a large **Power Off** tile, **Wi-Fi** and **Do Not

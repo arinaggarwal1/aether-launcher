@@ -325,7 +325,7 @@ public class SetupActivity extends Activity {
             handler.postDelayed(cycle[0], 2200);
         };
         handler.postDelayed(cycle[0], 2400);
-        TextView s = subtitle("Let\u2019s set up Refract Launcher.");
+        TextView s = subtitle("Let\u2019s set up Aether Launcher.");
         Ui.textSize(s, 17);
         LinearLayout l = list();
         option(l, "Get Started", null, false, this::next);
@@ -830,10 +830,10 @@ public class SetupActivity extends Activity {
             handler.postDelayed(() -> Perms.requestLocation(this), 600);
         }
         title("Finish Setting Up");
-        subtitle("Refract works best as the home screen. Allow these once; anything this TV doesn't support is skipped.");
+        subtitle("Aether works best as the home screen. Allow these once; anything this TV doesn't support is skipped.");
         LinearLayout l = list();
         boolean home = Perms.isDefaultHome(this);
-        option(l, "Make Refract the Home Screen", home ? "The Home button opens Refract" : "Choose Refract when asked", home,
+        option(l, "Make Aether the Home Screen", home ? "The Home button opens Aether" : "Choose Aether when asked", home,
                 () -> Perms.requestDefaultHome(this));
         if (!Perms.hasLocation(this)) {
             option(l, "Show the Wi-Fi Name", "In Control Center (needs location access)", false,
@@ -843,7 +843,7 @@ public class SetupActivity extends Activity {
             option(l, "Continue Watching", "Remember what you play in each app", false, () -> Perms.requestListener(this));
         }
         if (Perms.adminSupported(this) && !Perms.hasAdmin(this)) {
-            option(l, "Power Off & Sleep Timer", "Let Refract turn the screen off", false, () -> Perms.requestAdmin(this));
+            option(l, "Power Off & Sleep Timer", "Let Aether turn the screen off", false, () -> Perms.requestAdmin(this));
         }
         option(l, "Continue", null, false, this::next);
         dots();

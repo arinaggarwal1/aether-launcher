@@ -1,6 +1,6 @@
-# Contributing to Refract Launcher
+# Contributing to Aether Launcher
 
-Thanks for helping. Refract Launcher is a tvOS 26–style home screen for Android TV: plain Java, no
+Thanks for helping. Aether Launcher is a tvOS 26–style home screen for Android TV: plain Java, no
 Gradle, no third-party runtime libraries, built to stay smooth on low-end TV boxes. This guide
 covers how to work on it; to set up your machine first, see
 **[docs/getting-started.md](docs/getting-started.md)**.
@@ -90,7 +90,7 @@ Match the code around you; consistency matters more than any rule here.
 
 ## 4. Design rules
 
-Refract's whole point is to look and feel like Apple tvOS 26. Before building UI:
+Aether's whole point is to look and feel like Apple tvOS 26. Before building UI:
 
 - **Measure Apple's real UI first** (Apple's tvOS screenshots and the Human Interface Guidelines),
   then implement and state the measured numbers in the code or change notes. Don't improvise the look.
@@ -131,14 +131,14 @@ Include the numbers in your change notes. `--es perf <layer>` (see getting-start
   degrade gracefully with a clear message where the TV can't do it. Add new flows to `Perms.java`.
 - Detect what the device supports before offering a feature (e.g. low-RAM TVs can't grant
   notification access; some TVs have no device-admin feature).
-- The accessibility service (`PowerService`) does only what the user asked from Refract (sleep, close
+- The accessibility service (`PowerService`) does only what the user asked from Aether (sleep, close
   apps). Don't extend it to read screen content.
 - No analytics, no tracking, no accounts. Network calls go only to the content sources a feature
   needs (weather, news, recommendations, search, IP location) and never send personal data.
   Search queries go only to JustWatch (and Stremio's Cinemeta when Stremio/Nuvio is installed);
   recent searches stay on the TV.
 - The microphone is used only while the user is dictating in Search (after Android's own prompt);
-  Refract never records or stores audio itself.
+  Aether never records or stores audio itself.
 - Never commit secrets (API tokens, passwords) — TMDB keys are entered by the user at runtime.
 
 ## 7. Testing a change
@@ -183,7 +183,7 @@ follow §6, code follows §3.
 
 ## 10. Licensing
 
-Refract Launcher is licensed under the **[Apache License 2.0](LICENSE)**. Contributions are licensed
+Aether Launcher is licensed under the **[Apache License 2.0](LICENSE)**. Contributions are licensed
 under the same terms (Apache-2.0, section 5). Keep the
 [NOTICE](NOTICE) file accurate: add an entry for any third-party code or asset you bring in, and only
 bring in code under a licence compatible with Apache-2.0 (MIT, BSD, Apache, OFL for fonts — not GPL).

@@ -252,7 +252,7 @@ final class AdminServer {
         } catch (Exception ignored) {
         }
         return new JSONObject()
-                .put("name", "Refract Presentation")
+                .put("name", "Aether Presentation")
                 .put("device", android.os.Build.MODEL)
                 .put("port", PORT)
                 .put("urls", new JSONArray(Net.urls(PORT)))

@@ -57,7 +57,7 @@ source (Nayuki, MIT) under `src/io/nayuki/qrcodegen`.
   and Continue Watching uses published media sessions.
 
 - **Search without a list of services.** JustWatch says which services in India have a title and
-  gives each one's links; Refract finds the app for each service itself (the package in the Android
+  gives each one's links; Aether finds the app for each service itself (the package in the Android
   TV link, an installed non-browser handler of the web link, a remembered match, or an installed
   app with the same name), so new services need no update. Android 11+ hides other apps unless
   declared, so the manifest's `<queries>` lists launcher apps, voice input, the speech service
@@ -86,7 +86,7 @@ source (Nayuki, MIT) under `src/io/nayuki/qrcodegen`.
 - Measure with `adb shell dumpsys gfxinfo com.arinaggarwal.refract` — dock navigation runs at a 16 ms
   median; full-screen transitions are limited by the GPU's fill rate (~30 fps on this box).
 
-## Refract additions
+## Aether additions
 
 Package and application ID: `com.arinaggarwal.refract`. This personal package is separate from
 the original `com.hydrainnit.refract`; neither package is an in-place update for the other.
@@ -115,7 +115,7 @@ who controls the device. That is why both keys are optional, personal and free.
 
 **Pexels licence.** The photos are bundled as built-in backgrounds of a launcher, with every
 photographer credited. The Pexels License allows this. It forbids selling unaltered copies or
-building a competing wallpaper service, and Refract does neither.
+building a competing wallpaper service, and Aether does neither.
 
 The transparent `ControlCenterActivity` reuses Home's Control Center in a separate task so a
 remote shortcut can display it over another app and dismiss back to that app.

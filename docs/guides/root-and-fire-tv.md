@@ -1,6 +1,6 @@
 # Root and Fire TV
 
-Refract's ordinary launcher features do not require root. A rooted TV can offer additional maintenance
+Aether's ordinary launcher features do not require root. A rooted TV can offer additional maintenance
 options, but root does not automatically turn them on, change the launcher into a system app, or
 grant access to every vendor API.
 
@@ -13,7 +13,7 @@ a compatible TV, a network connection, or a separate app. For example:
 - Wi-Fi scanning needs Location access and enabled location services; network control depends on
   Android version and network security. Bluetooth access and audio controls also vary by version.
 - Continue Watching and Do Not Disturb use notification access. Power Off and Sleep Timer use device
-  administration or the user's enabled Refract accessibility service where the device supports it.
+  administration or the user's enabled Aether accessibility service where the device supports it.
 - Refract Remote is a separate companion app with its own setup; it is not included in the launcher.
 
 See [Features](../features.md) for the permission and compatibility details.
@@ -44,7 +44,7 @@ Restoring an original app or its data would be a separate recovery operation. Se
 - Root does not make the launcher's Bluetooth or Wi-Fi panels bypass all platform and firmware
   restrictions. Some actions open system settings; supported behavior varies across Android versions.
 - Root does not give the Cube a discoverable list of the television's separate HDMI 1, 2, and 3 ports.
-  Refract lists hardware inputs exposed by the device; Alexa equipment control may switch compatible
+  Aether lists hardware inputs exposed by the device; Alexa equipment control may switch compatible
   televisions by voice.
 - Root does not itself provide remote-button remapping or the companion app. Refract Remote is a
   separate installation and setup.
@@ -52,7 +52,7 @@ Restoring an original app or its data would be a separate recovery operation. Se
   separately for recovery; keep the launcher's signing key and its password in an encrypted offline
   backup. App-private data and keys may be exposed to someone with privileged access to the device.
 
-On this setup, Amazon HomeActivity_vNext and Fire Home Starter are already disabled and Refract is
+On this setup, Amazon HomeActivity_vNext and Fire Home Starter are already disabled and Aether is
 already Home. Leave those component states as they are. A connected device is not permission to
 install, force-stop apps, migrate data, change components, or switch Home; choose each operation
 explicitly and always identify the ADB serial.

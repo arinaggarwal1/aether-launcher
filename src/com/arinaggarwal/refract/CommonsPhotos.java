@@ -20,7 +20,7 @@ import java.util.TimeZone;
 final class CommonsPhotos {
     private CommonsPhotos() { }
     static final String ID = "commons-daily", CATEGORY = "commons";
-    static final String AGENT = "RefractLauncher/1.0 (https://github.com/arinaggarwal1/refract-launcher)";
+    static final String AGENT = "AetherLauncher/1.0 (https://github.com/arinaggarwal1/aether-launcher)";
     private static final long RETRY_MS = 60 * 60 * 1000L;
     private static long lastAttempt;
     private static String lastAttemptKey = "";
