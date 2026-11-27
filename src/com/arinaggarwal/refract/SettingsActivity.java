@@ -53,6 +53,7 @@ public class SettingsActivity extends Activity {
         build();
         String pg = getIntent().getStringExtra("page");  // adb: --es page "Top Shelf"
         if (pg != null) show(pg.equals("api") ? API : pg);
+        if (getIntent().getBooleanExtra("check_updates", false)) handler.post(this::checkForUpdates);
     }
 
     @Override

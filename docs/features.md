@@ -37,7 +37,10 @@ Settings → Home → **Run setup again** repeats it. If Home is pressed mid-way
 
 Settings > About > **Check for Updates** checks published GitHub releases on demand. A newer
 release can be downloaded and verified on the TV, then installed through the TV's own confirmation
-screen. The installed version must include the updater.
+screen. The installed version must include the updater. Home also checks periodically and shows a
+small update notice when a newer release is available. Navigate down from the status row to download
+it or dismiss the notice; a later release can show a new notice. The notice remains available offline
+after a successful check and does not interrupt Home navigation.
 
 ## Home screen
 

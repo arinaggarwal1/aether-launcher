@@ -141,6 +141,11 @@ public class MainActivity extends Activity {
     final Handler handler = new Handler(Looper.getMainLooper());
 
     FrameLayout root;
+    LinearLayout updateNotice;
+    TextView updateAction, updateDismiss;
+    boolean updateChecking;
+    static final String UPDATE_NOTICE_PREFS = "home_update_notice";
+    static final long UPDATE_CHECK_INTERVAL = 30 * 60 * 1000L;
     ImageView wallView;
     /** Top shelf carousel: two crossfading backdrops + info panel. */
     ImageView heroBack, heroFront;
@@ -419,6 +424,9 @@ public class MainActivity extends Activity {
         }
         updateWeather();
         applyTabs();
+        showCachedUpdateNotice();
+        handler.removeCallbacks(updateCheck);
+        handler.post(updateCheck);
         resetIdle();
         // Opened from the app list while another launcher is the home screen: offer once to take over.
         if (SetupActivity.done(this) && !Perms.isDefaultHome(this) && !prefs.getBoolean("asked_default_home", false)) {
@@ -507,6 +515,7 @@ public class MainActivity extends Activity {
         handler.removeCallbacks(heroAdvance);
         handler.removeCallbacks(weatherTick);
         handler.removeCallbacks(backgroundRotation);
+        handler.removeCallbacks(updateCheck);
         handler.removeCallbacks(idleRunnable);
         if (idle) exitIdle();
     }
@@ -533,6 +542,104 @@ public class MainActivity extends Activity {
         }
         if (wakeReceiver != null) unregisterReceiver(wakeReceiver);
         handler.removeCallbacksAndMessages(null);
+    }
+
+    /** Check quietly while Home is open, and keep a cached notice available offline. */
+    final Runnable updateCheck = new Runnable() {
+        @Override public void run() {
+            if (!resumed || overlayOnly) return;
+            handler.postDelayed(this, UPDATE_CHECK_INTERVAL);
+            if (updateChecking) return;
+            updateChecking = true;
+            new Thread(() -> {
+                try {
+                    Updates.Release release = Updates.check();
+                    long installed = Updates.installedVersion(getApplicationContext());
+                    handler.post(() -> {
+                        updateChecking = false;
+                        if (isFinishing() || isDestroyed()) return;
+                        getSharedPreferences(UPDATE_NOTICE_PREFS, MODE_PRIVATE).edit()
+                                .putLong("version", release.version > installed ? release.version : 0)
+                                .putString("name", release.name).apply();
+                        showCachedUpdateNotice();
+                    });
+                } catch (Exception ignored) {
+                    handler.post(() -> updateChecking = false);
+                }
+            }, "aether-update-check").start();
+        }
+    };
+
+    void showCachedUpdateNotice() {
+        if (root == null || overlayOnly) return;
+        SharedPreferences state = getSharedPreferences(UPDATE_NOTICE_PREFS, MODE_PRIVATE);
+        long version = state.getLong("version", 0);
+        try {
+            if (version <= Updates.installedVersion(this) || version <= state.getLong("dismissed", 0)) {
+                removeUpdateNotice();
+                return;
+            }
+        } catch (Exception e) { return; }
+        String name = state.getString("name", "Aether update");
+        if (updateNotice != null) {
+            updateAction.setText(name + " available  \u2192");
+            return;
+        }
+        updateNotice = new LinearLayout(this);
+        updateNotice.setGravity(Gravity.CENTER_VERTICAL);
+        updateNotice.setPadding(dp(9), dp(5), dp(5), dp(5));
+        updateNotice.setBackground(theme.panel(dp(20), unit));
+        updateNotice.setElevation(dp(12));
+        updateAction = updateNoticeButton(name + " available  \u2192", 12);
+        updateAction.setSingleLine(true);
+        updateAction.setEllipsize(TextUtils.TruncateAt.END);
+        updateAction.setPadding(dp(8), 0, dp(8), 0);
+        updateAction.setOnClickListener(v -> {
+            returningFromSettings = true;
+            startActivity(new Intent(this, SettingsActivity.class)
+                    .putExtra("page", "About").putExtra("check_updates", true));
+        });
+        updateNotice.addView(updateAction, new LinearLayout.LayoutParams(0, dp(36), 1f));
+        updateDismiss = updateNoticeButton("\u00d7", 20);
+        updateDismiss.setContentDescription("Dismiss update notice");
+        updateDismiss.setOnClickListener(v -> {
+            SharedPreferences notice = getSharedPreferences(UPDATE_NOTICE_PREFS, MODE_PRIVATE);
+            notice.edit().putLong("dismissed", notice.getLong("version", 0)).apply();
+            removeUpdateNotice();
+        });
+        updateNotice.addView(updateDismiss, new LinearLayout.LayoutParams(dp(36), dp(36)));
+        FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(dp(260), dp(46), Gravity.TOP | Gravity.END);
+        lp.topMargin = dp(74);
+        lp.rightMargin = dockOuter;
+        root.addView(updateNotice, lp);
+    }
+
+    TextView updateNoticeButton(String label, float size) {
+        TextView button = text(size, Ui.font(this, "medium"), 1f);
+        button.setText(label);
+        button.setTextColor(theme.text);
+        button.setShadowLayer(0, 0, 0, 0);
+        button.setGravity(Gravity.CENTER);
+        button.setFocusable(true);
+        button.setClickable(true);
+        button.setOnFocusChangeListener((v, focused) -> {
+            GradientDrawable bg = new GradientDrawable();
+            bg.setCornerRadius(dp(16));
+            bg.setColor(focused ? theme.rowFocused : Color.TRANSPARENT);
+            button.setBackground(bg);
+            button.setTextColor(focused ? theme.onFocused : theme.text);
+        });
+        return button;
+    }
+
+    void removeUpdateNotice() {
+        if (updateNotice == null) return;
+        boolean focused = updateAction.isFocused() || updateDismiss.isFocused();
+        root.removeView(updateNotice);
+        updateNotice = null;
+        updateAction = null;
+        updateDismiss = null;
+        if (focused && resumed) focusStatus(ccButton);
     }
 
     // ---------------------------------------------------------------- layout
@@ -2473,6 +2580,18 @@ public class MainActivity extends Activity {
         boolean down = ev.getAction() == KeyEvent.ACTION_DOWN;
         View f = getCurrentFocus();
         boolean heroActive = shelfView.isFocusable() && !folderMode;
+        if (updateNotice != null && (f == updateAction || f == updateDismiss)) {
+            if (k == KeyEvent.KEYCODE_DPAD_LEFT || k == KeyEvent.KEYCODE_DPAD_RIGHT) {
+                if (down) (k == KeyEvent.KEYCODE_DPAD_LEFT ? updateAction : updateDismiss).requestFocus();
+                return true;
+            }
+            if (k == KeyEvent.KEYCODE_DPAD_UP) { if (down) focusStatus(ccButton); return true; }
+            if (k == KeyEvent.KEYCODE_DPAD_DOWN || k == KeyEvent.KEYCODE_BACK) {
+                if (down) focusBelowStatus();
+                return true;
+            }
+            return false;
+        }
         if (f == shelfView) {
             switch (k) {
                 case KeyEvent.KEYCODE_DPAD_LEFT:
@@ -2568,7 +2687,10 @@ public class MainActivity extends Activity {
                 return true;
             }
             if (k == KeyEvent.KEYCODE_DPAD_DOWN || k == KeyEvent.KEYCODE_BACK) {
-                if (down) focusBelowStatus();
+                if (down) {
+                    if (k == KeyEvent.KEYCODE_DPAD_DOWN && updateNotice != null) updateAction.requestFocus();
+                    else focusBelowStatus();
+                }
                 return true;
             }
             return k == KeyEvent.KEYCODE_DPAD_UP;
