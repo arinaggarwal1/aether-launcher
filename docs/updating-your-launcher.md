@@ -20,8 +20,7 @@ Tell Codex what you want to change. Once the change is ready, ask:
 > Build the launcher and install the update on my Fire TV.
 
 Codex can build the signed APK and install it while the Cube is connected to your Mac through
-ADB. The current address is `172.20.25.97:5555`; the IP may change, so check the Cube's network
-settings and `adb devices` if it cannot connect. If you only ask for a code change, installing it
+ADB. The IP can change, so check the Cube's network settings and `adb devices -l` if it cannot connect. If you only ask for a code change, installing it
 on the TV is a separate step: explicitly ask Codex to install the update when you are ready.
 
 ## Check for updates on the TV
@@ -32,9 +31,8 @@ will show its own installation confirmation. If asked, allow Refract Custom unde
 **Install unknown apps** setting, return to About, and choose **Check for Updates** again to install.
 Your folders and settings stay in place.
 
-The first updater build must be installed once using ADB or Codex, because the currently installed
-version cannot update itself yet. A release must also be published on GitHub before there is
-anything to find. If you see **No Releases Yet**, nothing has been published. If the release is
+The installed version must include the updater. A release must also be published on GitHub before
+there is anything to find. If you see **No Releases Yet**, nothing has been published. If the release is
 still being built, wait a few minutes and check again. A release is available after the signed APK
 and its `release.json` metadata have both been attached by GitHub Actions.
 
@@ -49,18 +47,18 @@ On your Mac, open Terminal and run:
 
 ```sh
 cd "/Users/arinaggarwal/Documents/Software Dev/refract-launcher"
-adb connect 172.20.25.97:5555
+adb connect TV_IP:5555
 adb devices
 ./build.sh
-python3 tools/tv.py --serial 172.20.25.97:5555 install build/refract-custom.apk
+python3 tools/tv.py --serial TV_IP:5555 install build/refract-custom.apk
 ```
 
-Replace the address in both commands if the Cube's IP changes. Accept an ADB prompt on the TV if
+Replace `TV_IP:5555` with the Cube's current ADB serial in every command. Accept an ADB prompt on the TV if
 one appears, and check that `adb devices` lists it as `device`. You can also install the built APK
 with Android's update command:
 
 ```sh
-adb -s 172.20.25.97:5555 install -r build/refract-custom.apk
+adb -s TV_IP:5555 install -r build/refract-custom.apk
 ```
 
 The Python installer adds checks for the package name, signing certificate, and version before
@@ -101,11 +99,9 @@ A local build is enough for everyday updates. For TV-side updates, first make
 sure the build workflow and your changes are committed and pushed to the commit you will release.
 Publish a release with a new tag in GitHub; the **Signed custom APK** action attaches
 `refract-custom.apk`, `SHA256SUMS`, and `release.json`. Download the APK and install it with
-`adb -s 172.20.25.97:5555 install -r /path/to/refract-custom.apk`.
+`adb -s TV_IP:5555 install -r /path/to/refract-custom.apk`.
 
-A pull request is not required for this personal repository. The original feature work was pushed
-to a feature branch, so check that the commit you release actually contains the changes and workflow
-you want. A release from another branch or an older commit will build that commit's code.
+A pull request is not required for this personal repository. Check that the commit you release actually contains the changes and workflow you want. A release from another branch or an older commit will build that commit's code.
 
 ## Original launcher backup
 

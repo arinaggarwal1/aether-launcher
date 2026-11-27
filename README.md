@@ -1,126 +1,175 @@
-# Refract Custom Launcher
+<p align="center">
+  <img src="docs/images/refract-banner.png" alt="Refract Launcher" width="720">
+</p>
 
-Your personal fork. **[Update the launcher on your Fire TV](docs/updating-your-launcher.md)**.
+<h1 align="center">Refract Custom</h1>
 
-Run `./build.sh` for a permanently signed `build/refract-custom.apk`. Publish a GitHub release
-to build a downloadable APK with the same identity.
+<p align="center">
+  A personal Android TV launcher with a tvOS-inspired Home screen, glass controls,
+  and a remote-first interface.
+</p>
 
-![Refract Launcher](docs/images/refract-banner.png)
+<p align="center">
+  <a href="https://github.com/arinaggarwal1/refract-launcher/releases/latest">Download a release</a>
+  &nbsp; · &nbsp;
+  <a href="docs/features.md">Explore features</a>
+  &nbsp; · &nbsp;
+  <a href="docs/updating-your-launcher.md">Update your TV</a>
+  &nbsp; · &nbsp;
+  <a href="docs/README.md">Documentation</a>
+</p>
 
-A tvOS 26–style home screen for Android TV, **made by Hydrainnit**. It is a fork of
-[Hume Launcher](https://github.com/petrobot-admin/hume-launcher) by **Petrobot**, whose work it
-builds on (see [Attributions](ATTRIBUTIONS.md)). It replaces the stock launcher with one modelled on
-Apple TV: glass dock, full-screen carousel, Control Center and profiles. It is built to stay smooth
-on low-end TV boxes like the Xiaomi Mi Box. Plain Java, no Gradle, no third-party runtime
-libraries. The APK is about 1.3 MB: background photos download to the TV at 1080p or 4K, with gradients when offline.
+<p align="center"><strong>Android 7.0+ (API 24)</strong> · Java 11 · No Gradle or third-party runtime libraries</p>
 
-Application ID: `com.arinaggarwal.refract`.
+![Refract Home screen with the dock, carousel, weather and status row](docs/images/refract-home.jpg)
 
-![Home screen with the weather pill, Now Playing and the status pill](docs/images/refract-home.jpg)
+Refract Custom is a personal fork of **Refract Launcher by Hydrainnit**, itself based on
+[Hume Launcher](https://github.com/petrobot-admin/hume-launcher) by Petrobot. It brings a
+TV-friendly dock, personalized content, search, and device controls together on one Home screen.
+This fork uses the separate application ID **`com.arinaggarwal.refract`** and its own permanent
+signing identity. It is not an in-place update for the original launcher.
 
-## Screenshots
+## At a glance
 
 | | |
 |---|---|
-| ![Weather pill grown into the Apple Weather-style card](docs/images/refract-weather-card.jpg) | ![Control Center](docs/images/refract-control-center.jpg) |
-| **Weather**: focus the pill and it grows into a forecast card | **Control Center**: one glass panel |
+| **Home, your way** | A glass dock, app grid, folders, per-profile layouts, light and dark themes, and rotating backgrounds. |
+| **Content up front** | Continue Watching, news, recommendations, and an optional Movies tab and Home theme. |
+| **Find things fast** | Search apps, settings, inputs, movies, and shows; use the TV keyboard or supported voice input. |
+| **Control Center** | Wi-Fi, Bluetooth audio, Do Not Disturb, sleep timer, power, memory, inputs, and settings. |
+| **Weather & Ambient** | A forecast card and photo or movie screensaver with clocks and credits. |
+| **Presentation mode** | Send images, videos, and webpages from a browser to a full-screen TV player. |
+| **Profiles** | Up to three profiles, each with its own Home layout, background, and content choices. |
+| **TV-side updates** | Check published releases from Settings, verify the download, and install with Android's confirmation screen. |
+
+| Home in Light | Weather |
+|---|---|
+| ![Light appearance](docs/images/refract-home-light.jpg) | ![Weather forecast card](docs/images/refract-weather-card.jpg) |
+| Search | Settings |
 | ![Search](docs/images/refract-search.jpg) | ![Settings](docs/images/refract-settings.jpg) |
-| **Search**: apps, settings and every streaming service | **Settings**, tvOS-style |
-| ![Refract Ambient screensaver](docs/images/refract-ambient.jpg) | ![Home in Light appearance](docs/images/refract-home-light.jpg) |
-| **Refract Ambient** screensaver with weather and photo credit | **Light appearance** |
 
-![Now Playing pill next to the status pill](docs/images/refract-now-playing.jpg)
+*These screenshots come from the Android TV emulator and may show earlier interface versions.
+Artwork belongs to its respective owners and is fetched at runtime.*
 
-*Now Playing: album art and a waveform beside the status pill while music plays in the background.*
+## Using Refract
 
-Screenshots are from the Android TV emulator. Posters and artwork shown in the carousel belong to
-their studios and are fetched at runtime, not shipped in the app.
+Navigate with the D-pad and press **OK** to select. Hold OK on an app for its options, including
+moving it or adding it to a folder. Hold **Back** on Home to open Search; a short press goes back.
+The status row opens Search, Settings, Control Center, and profiles. Home closes overlays and returns
+to the first dock app.
 
-## Features
+Control Center includes glass Wi-Fi and Bluetooth panels. On Fire OS 7, the Wi-Fi panel can scan
+for networks with Location permission and connect to supported networks; Bluetooth audio controls
+can connect or disconnect paired audio devices. Other security types, devices, and Android versions
+may require the TV's own settings. Audio routing and network controls depend on the device; the
+new Wi-Fi panel has not yet been verified on the Fire TV Cube.
 
-- **Updates**: Settings > About > Check for Updates downloads and verifies newer GitHub releases.
-- **Appearance**: Light (frosted white glass, dark text) or Dark (smoked glass), chosen in setup
-  with live previews and followed by every screen.
-- **Home**: Liquid Glass dock, 6-across app grid in Apple's measured proportions, focus lift and
-  zoom-to-open, named Home folders, More Apps folder, 53 Pexels photographs in 9 categories shown behind the grid,
-  downloaded to the TV at 1080p or 4K (gradients when offline).
-- **Movies**: a Movies tab (Trending, Popular, Top Rated, Coming Soon, genres) and an optional
-  **Movies Home Theme** with full-screen TMDB backdrops, title logos, rating, release date and
-  overview. Both need your own free TMDB key.
-- **Refract Ambient**: a photo or movie screensaver with a glass-gradient clock (6 styles), weather
-  and photo credits, usable on idle Home or as the TV's own screensaver.
-- **Carousel**: Continue Watching first (Resume / Remove, expires after 7 days), then Indian news
-  (India, your city, world) and rotating recommendations from your streaming services. Goes full
-  screen when Home is idle.
-- **Status pill**: internet indicator, time, voice assistant, Movies, Search, Control Center,
-  profile avatar. The remote's voice/mic button opens the same voice flow.
-- **Now Playing**: while Spotify, Amazon Music, YouTube or any app plays in the background, a glass
-  pill with the album art and a waveform appears beside the status pill (Dynamic Island-style).
-- **Search**: apps, settings and inputs instantly, plus movies and shows on every streaming service
-  in India (Indian titles included, typed in English or Hindi, or spoken) with **Open** in the app
-  you have or **Get** for the one you don't.
-- **Weather**: a glass pill level with the status pill that grows into an Apple Weather-style card
-  on focus: hourly row and 5-day range bars (Open-Meteo, MET Norway or wttr.in — no keys).
-- **Control Center**: one glass panel with Power Off, Wi-Fi, Do Not Disturb, audio, sleep timer,
-  Memory/Clean, and round shortcuts (controllers, accessibility or inputs, settings, refresh).
-- **API keys**: optional TMDB and Pexels keys, entered on the TV and stored encrypted with the
-  Android Keystore. Never required.
-- **Profiles**: up to 3, each with its own layout, background and carousel; full-screen switcher.
-- **Inputs**: HDMI/AV/TV picker with connector icons, on TVs that have inputs.
-- **Presentation mode**: send images, videos and webpages from a browser and loop them full screen;
-  can start with the TV (signage).
-- **First-time setup** in Apple's style, **multi-page Settings**, permissions asked **on screen**
-  (adb only as a last resort), system or carousel **screensaver**, and Android TV navigation sounds.
-- **AirPlay**: works with the open-source [AirPlay Server](https://github.com/jqssun/android-airplay-server)
-  app; Refract keeps the receiver visible to Macs and iPhones after the TV sleeps.
+The Inputs picker uses inputs exposed by Android's TV input framework. A Fire TV Cube does not
+expose the television's separate HDMI ports as its own inputs. A separately installed **Refract
+Remote** companion can map a remote button to open Control Center over another app; it has its own
+setup and is not part of this launcher APK.
 
-Full list with screenshots: **[docs/features.md](docs/features.md)**.
+See the [feature guide](docs/features.md) for the full tour, permissions, and screenshots. For
+browser uploads and playback, see [Presentation mode](docs/presentation.md).
 
-## Quick start
+## Install and update
+
+### Already using this fork?
+
+On the TV, open **Settings → About → Check for Updates**, download an available release, and
+confirm installation in the system installer. The updater checks the release metadata, package,
+checksum, and signing certificate. If asked, allow Refract to install unknown apps in TV settings.
+
+An in-place update with the same package and signing key keeps the launcher's app data, including
+profiles, layouts, preferences, and Keystore-backed API keys. Do not uninstall or clear data to
+resolve a signing or version error. The [update guide](docs/updating-your-launcher.md) covers the
+TV-side and computer-assisted paths, troubleshooting, and recovery.
+
+### First install
+
+Download `refract-custom.apk` from [Releases](https://github.com/arinaggarwal1/refract-launcher/releases)
+and install it through a method supported by your device. Follow the on-screen setup and the
+[install guide](docs/install.md) for Home selection and optional permissions. Availability of Home
+selection and permissions varies by TV and firmware.
+
+**Your Fire TV Cube:** Refract Custom is already installed and selected as Home. The original
+`com.hydrainnit.refract` was uninstalled after backup, so the old rollback command alone cannot
+restore it. Do not repeat the historical migration or change the already-disabled Amazon Home
+components. [Details and recovery](docs/custom-updates.md).
+
+## What root adds
+
+Root is **not required** for Refract's ordinary Home screen, Control Center, search, or presentation
+features. Android permissions and the device's own capabilities still determine what is available.
+The launcher itself does not automatically request root.
+
+On a rooted device, the optional, explicitly invoked TV helper can access another app's private
+files for a backup or a guarded one-time migration, and can attempt to set the preferred Home
+activity. Those are maintenance operations, not automatic launcher features. In-place updates and
+the on-TV updater do not require root. Root also does not automatically unlock private Amazon APIs,
+provide direct access to every TV HDMI input, or bypass Android's other restrictions.
+
+The [root and Fire TV guide](docs/guides/root-and-fire-tv.md) explains what is supported, what
+requires a separate companion, and the limits of the historical migration tools.
+
+## Build from source
+
+The signed build is intended for this personal fork and needs the **existing permanent signing
+key** plus GitHub CLI authentication with repository write access. Each build reserves a unique
+increasing version code in GitHub; it does not install anything on a TV.
 
 ```sh
-# needs JDK 17+ and Android SDK build-tools 36.0.0 + platform android-35 (see getting started)
-./build.sh                                   # → build/refract-custom.apk
-adb connect <tv-ip>:5555
-adb install -r build/refract-custom.apk
-adb shell am start -n com.arinaggarwal.refract/.MainActivity
+# JDK 17+, Android SDK build-tools 36.0.0 and platform android-35
+# Restore the existing signing directory and authenticate gh first.
+./build.sh
+# build/refract-custom.apk, build/SHA256SUMS, build/release.json
 ```
 
-## Documentation
+The key and password live outside Git in `~/.config/refract-launcher/signing` (or the configured
+`REFRACT_SIGNING_DIR`). Keep an encrypted offline backup. Never generate a replacement for the
+existing installation or reset the `refract-build/*` reservation tags. See
+[build and signing](docs/custom-updates.md) and [developer setup](docs/getting-started.md).
 
-| | |
+When you explicitly want to install an update from a computer, select the device by serial:
+
+```sh
+adb devices -l
+python3 tools/tv.py --serial TV_IP:5555 install build/refract-custom.apk
+```
+
+Replace `TV_IP:5555` with the intended device. The helper checks the APK package, certificate,
+and version before installing; it does not change the preferred Home activity.
+
+## Project guide
+
+| I want to… | Start here |
 |---|---|
-| **[Updating your launcher](docs/updating-your-launcher.md)** | Build and install updates on your Fire TV |
-| **[Getting started](docs/getting-started.md)** | Install the tools, build, run on a TV or the emulator, developer shortcuts |
-| **[Features](docs/features.md)** | Everything Refract does, by area |
-| **[Install and set up](docs/install.md)** | Make it the home screen, permissions, undo |
-| **[Presentation mode](docs/presentation.md)** | Sending content from a browser, the player, the web API |
-| **[Architecture](docs/architecture.md)** | Code map, build, design decisions, performance |
-| **[Attributions](ATTRIBUTIONS.md)** | Original app, fonts, code, photographers, data sources |
-| **[Contributing](CONTRIBUTING.md)** | Workflow, code style, design and performance rules, testing |
+| Learn the interface and controls | [Features](docs/features.md) |
+| Install, update, or recover | [Install](docs/install.md) · [Updating](docs/updating-your-launcher.md) · [Signing and migration](docs/custom-updates.md) |
+| Understand root and Fire TV support | [Root and Fire TV](docs/guides/root-and-fire-tv.md) |
+| Use Presentation mode | [Presentation guide](docs/presentation.md) |
+| Find code, resources, and tests | [Repository map](docs/reference/repository-map.md) · [Architecture](docs/architecture.md) |
+| Build or contribute | [Getting started](docs/getting-started.md) · [Contributing](CONTRIBUTING.md) |
 
-## Requirements
+The [documentation index](docs/README.md) groups all guides by task.
 
-Android TV 7.0+ (API 24). Developed and tested on a Xiaomi Mi Box 4 (Android 12) and an Android 9
-TV with 1 GB RAM.
+## Privacy, data, and compatibility
 
-## License
+- Optional API keys are saved in app-private preferences using Android Keystore encryption where
+  available. Some broken TV keystores require a fallback to app-private, unencrypted storage; see
+  [Secrets.java](src/com/arinaggarwal/refract/Secrets.java). A rooted device can expose app data.
+- The updater uses this repository's public GitHub releases. Weather, recommendations, search,
+  artwork, and Presentation mode contact their respective services or local network when used.
+- This fork targets Android API 34, compiles against API 35, and supports API 24 and newer. The
+  personal target is a Fire TV Cube 3rd gen running Fire OS 7 / Android 9. Behavior and performance
+  vary by device; emulator screenshots are not proof of hardware compatibility.
+- Permission-dependent features request access through Android's prompts or settings where
+  available. Some TVs omit these screens or restrict particular features.
 
-Apache License 2.0 — see [LICENSE](LICENSE) and [NOTICE](NOTICE).
+## Credits & license
 
-## Credits
+Refract builds on Hydrainnit's Refract Launcher and Petrobot's Hume Launcher. It includes the
+Inter typeface and Nayuki's QR code generator, and uses third-party content and data services.
+See [ATTRIBUTIONS.md](ATTRIBUTIONS.md) for authors, licenses, image credits, and data sources.
 
-Refract Launcher is made by **Hydrainnit**, on top of other people's work. Thank you to all of them.
-The full list, with licences and links, is in **[ATTRIBUTIONS.md](ATTRIBUTIONS.md)** and on the TV
-under Settings → About → Attributions.
-
-- **Original app**: [Hume Launcher](https://github.com/petrobot-admin/hume-launcher) by
-  **Petrobot** (Apache 2.0). Refract is a fork; the original licence and NOTICE are kept.
-- **Fonts**: [Inter and Inter Display](https://rsms.me/inter/) by The Inter Project Authors (SIL OFL 1.1).
-- **Code**: [QR Code generator](https://www.nayuki.io/page/qr-code-generator-library) by Project Nayuki (MIT).
-- **Photographs** ([Pexels](https://www.pexels.com), Pexels License): Sophia Zheng, Magic K, gang liang, Paolo Bici, Necip Duman, Phil Evenden, Mo Eid, MART PRODUCTION, Stephen Leonardi, Dirk Pothen, Marc Coenen, Atlantic Ambience, Magda Ehlers, Kimmo Vainio, Jess Loiterton, Shreyaan Vashishtha, Ali Kazal, Beepin4, Martin G, Zaur Takhgiriev, Fidan Nazim qizi, eberhard grossgasteiger, Vijit Bagh, Pixabay, Elsie Soto, Erik Mclean, Manzoni Studios, Indigo, İrem Kızılarslan, Dominik Perau, Shovan Datta, Sergio Zhukov, Francesco Ungaro, Codioful (formerly Gradienta), S S, Aarin Husain, Jozef Papp, Koma Tang, Gammel Knecht, Viliam Kudelka, Septimiu Lupea, Plato Terentev, Fariborz MP and Chanita Sykes.
-- **Data**: [TMDB](https://www.themoviedb.org) (*this product uses the TMDB API but is not endorsed
-  or certified by TMDB*), [JustWatch](https://www.justwatch.com), [Open-Meteo](https://open-meteo.com)
-  and [MET Norway](https://api.met.no) (CC BY 4.0), [wttr.in](https://wttr.in) by Igor Chubin,
-  Stremio Cinemeta, and the RSS feeds of Indian newsrooms (headlines belong to their publishers).
-- **Works with**: [AirPlay Server](https://github.com/jqssun/android-airplay-server) by jqssun.
+Licensed under [Apache 2.0](LICENSE); see [NOTICE](NOTICE).

@@ -88,13 +88,13 @@ source (Nayuki, MIT) under `src/io/nayuki/qrcodegen`.
 
 ## Refract additions
 
-Package and application ID: `com.arinaggarwal.refract` (renamed from `com.petrobot.hume`; a new
-install, so settings from Hume are not carried over).
+Package and application ID: `com.arinaggarwal.refract`. This personal package is separate from
+the original `com.hydrainnit.refract`; neither package is an in-place update for the other.
 
 | File | Role |
 |---|---|
 | `Theme.java` | Light / Dark colour tokens shared by every surface |
-| `Secrets.java` | API keys: Keystore AES-GCM (`refract_api_keys`), masked display, per-key status |
+| `Secrets.java` | API keys: Keystore AES-GCM (`refract_api_keys`) when available, app-private fallback, masked display and per-key status |
 | `Wallpapers.java`, `CommonsPhotos.java` + `assets/wallpapers/` | Existing Pexels photo metadata, per-profile background rotation, and a cached, credited Wikimedia featured photo with no key; the dormant Pexels API path is gated by `PEXELS_API_PAUSED` |
 | `Movies.java` | TMDB collections, logo and runtime lookups, disk caches; shared by Home theme, Movies tab and Ambient |
 | `MoviesPanel.java` | The Movies tab overlay |

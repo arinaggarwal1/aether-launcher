@@ -11,3 +11,6 @@ keystore-password.txt
 .build.lock
 backups/
 __pycache__/
+
+# macOS Finder metadata
+.DS_Store

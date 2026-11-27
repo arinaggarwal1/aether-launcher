@@ -65,42 +65,45 @@ required one-time signing/GitHub setup and Fire TV migration. Ordinary builds ne
 
 ## 4. Run it on a TV
 
-1. On the TV: **Settings → Device Preferences → About → Build**, click 7 times to unlock
-   Developer options; then **Developer options → USB debugging / Network debugging** on.
-2. From your computer (same network):
+For the personal Fire TV Cube, Refract Custom is already installed and is already Home. For an
+in-place update, follow [Updating your launcher](updating-your-launcher.md); do not repeat migration
+or change Amazon component states. On another device, use [Install and setup](install.md).
+
+When you explicitly choose to install a build, enable the TV's supported debugging option, connect
+from the same network, and select the device by serial:
 
 ```sh
-adb connect <tv-ip>:5555          # accept the "Allow debugging?" prompt on the TV
-adb install -r build/refract-custom.apk
-adb shell am start -n com.arinaggarwal.refract/.MainActivity
+adb connect TV_IP:5555
+adb devices -l
+python3 tools/tv.py --serial TV_IP:5555 install build/refract-custom.apk
 ```
 
-3. First launch runs the setup pages. To make Refract the home screen, finish setup (it offers this),
-   or on Google TV devices where the stock launcher always wins:
-   `adb shell pm disable-user --user 0 com.google.android.tvlauncher` (undo with `pm enable`).
+Replace `TV_IP:5555` with the intended device. Accept the TV's debugging prompt if one appears.
+Do not disable another launcher as a troubleshooting shortcut.
 
-More on installing and permissions: [install.md](install.md).
-
-## 5. Or use the Android TV emulator
+## 5. Use the Android TV emulator
 
 ```sh
-sdkmanager --list | grep "android-tv"          # pick an Android TV image for your CPU (x86_64 or arm64-v8a)
+sdkmanager --list | grep "android-tv"
 sdkmanager "emulator" "system-images;android-<api>;android-tv;<abi>"
 avdmanager create avd -n tv -k "system-images;android-<api>;android-tv;<abi>" -d tv_1080p
 emulator -avd tv &
-adb install -r build/refract-custom.apk
+adb devices -l
+adb -s EMULATOR_SERIAL install -r build/refract-custom.apk
 ```
 
-The emulator is fine for layout and logic. It does **not** show real performance (its GPU is far
-faster than a TV box's), and it has no HDMI inputs, so check those on hardware.
+Replace `EMULATOR_SERIAL` with the emulator listed by `adb devices -l`. The emulator is useful for
+layout and navigation, but does not establish Fire OS behavior, hardware performance, or HDMI and
+Bluetooth compatibility. Use the existing permanent signing identity for a signed build. Build and
+install only when explicitly requested.
 
 ## 6. Your first change
 
-1. Pick a small thing, e.g. a label in `SettingsActivity.java`.
-2. Build and install: `./build.sh && adb install -r build/refract-custom.apk`.
-3. Jump straight to the screen you changed with the developer shortcuts below, and take a
-   screenshot: `adb exec-out screencap -p > shot.png`.
-4. Read **[CONTRIBUTING.md](../CONTRIBUTING.md)** before opening a pull request.
+1. Read [CONTRIBUTING.md](../CONTRIBUTING.md) and inspect the relevant code.
+2. Use the source and host checks appropriate for the change. Build an APK when one is explicitly
+   requested; never automatically install it on a connected TV.
+3. Use an emulator or an explicitly authorized device for UI verification, with an explicit ADB
+   serial. Include Back, Home and remote focus where relevant.
 
 ### Developer shortcuts (adb)
 
@@ -108,17 +111,17 @@ Open any screen without clicking through the UI:
 
 | Command | Opens |
 |---|---|
-| `adb shell am start -n com.arinaggarwal.refract/.MainActivity --es panel cc` | Control Center (`inputs`, `weather`, `present` also work) |
-| `adb shell am start -n com.arinaggarwal.refract/.MainActivity --es panel search --es q panchayat` | Search, with a query typed in |
-| `adb shell am start -n com.arinaggarwal.refract/.MainActivity --ez pick_profile true` | Profile switcher |
-| `adb shell am start -n com.arinaggarwal.refract/.SettingsActivity --es page "Top Shelf"` | A Settings page by its title |
-| `adb shell am start -n com.arinaggarwal.refract/.SetupActivity --ei step 3` | Setup page 0–7 |
-| `adb shell am start -n com.arinaggarwal.refract/.SetupActivity --ez skip true` | Marks setup as done |
-| `adb shell am start -n com.arinaggarwal.refract/.SettingsActivity --es tmdb_token <key>` | Sets a TMDB key |
-| `adb shell am start -n com.arinaggarwal.refract/.MainActivity --es perf weather` | Hides one layer to measure its GPU cost (`status`, `hero`, `dockglass`, `shadows`; `reset` restores) |
+| `adb -s TV_SERIAL shell am start -n com.arinaggarwal.refract/.MainActivity --es panel cc` | Control Center (`inputs`, `weather`, `present` also work) |
+| `adb -s TV_SERIAL shell am start -n com.arinaggarwal.refract/.MainActivity --es panel search --es q panchayat` | Search, with a query typed in |
+| `adb -s TV_SERIAL shell am start -n com.arinaggarwal.refract/.MainActivity --ez pick_profile true` | Profile switcher |
+| `adb -s TV_SERIAL shell am start -n com.arinaggarwal.refract/.SettingsActivity --es page "Top Shelf"` | A Settings page by its title |
+| `adb -s TV_SERIAL shell am start -n com.arinaggarwal.refract/.SetupActivity --ei step 3` | Setup page 0–7 |
+| `adb -s TV_SERIAL shell am start -n com.arinaggarwal.refract/.SetupActivity --ez skip true` | Marks setup as done |
+| `adb -s TV_SERIAL shell am start -n com.arinaggarwal.refract/.SettingsActivity --es tmdb_token <key>` | Sets a TMDB key |
+| `adb -s TV_SERIAL shell am start -n com.arinaggarwal.refract/.MainActivity --es perf weather` | Hides one layer to measure its GPU cost (`status`, `hero`, `dockglass`, `shadows`; `reset` restores) |
 
-Useful logs: `adb logcat -s TvHome` (Refract's own messages) and
-`adb shell dumpsys gfxinfo com.arinaggarwal.refract` (frame times; see CONTRIBUTING.md).
+Useful logs: `adb -s TV_SERIAL logcat -s TvHome` (Refract's own messages) and
+`adb -s TV_SERIAL shell dumpsys gfxinfo com.arinaggarwal.refract` (frame times; see CONTRIBUTING.md).
 
 ## Troubleshooting
 
@@ -127,6 +130,6 @@ Useful logs: `adb logcat -s TvHome` (Refract's own messages) and
 | `Missing …/aapt2` | Install `build-tools;36.0.0` and `platforms;android-35`, or set `ANDROID_HOME` |
 | `javac not found` | Install JDK 17+ or set `JAVA_HOME` |
 | `INSTALL_FAILED_UPDATE_INCOMPATIBLE` | The installed copy was signed with a different key (e.g. a release build): restore the permanent signing key and rebuild; do not uninstall or clear settings |
-| `adb: device offline` / `unauthorized` | Accept the prompt on the TV; `adb disconnect` then `adb connect` again |
+| `adb: device offline` / `unauthorized` | Accept the prompt on the TV; `adb disconnect TV_IP:5555` then `adb connect TV_IP:5555` again |
 | Home button still opens the old launcher | Finish setup's *Make Refract the Home Screen*, or see install.md |
 | Install over Wi-Fi is very slow | Normal for 1 MB+ over a busy network; it finishes — don't wrap it in fixed sleeps |

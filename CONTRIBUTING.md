@@ -117,9 +117,9 @@ near a 16 ms median frame time.
 Measure before and after any visual change:
 
 ```sh
-adb shell dumpsys gfxinfo com.hydrainnit.refract reset
+adb -s TV_SERIAL shell dumpsys gfxinfo com.arinaggarwal.refract reset
 # …press Right/Left along the dock a few times…
-adb shell dumpsys gfxinfo com.hydrainnit.refract | grep -E "Janky|50th|90th"
+adb -s TV_SERIAL shell dumpsys gfxinfo com.arinaggarwal.refract | grep -E "Janky|50th|90th"
 ```
 
 Include the numbers in your change notes. `--es perf <layer>` (see getting-started) helps find costly layers.
@@ -143,17 +143,17 @@ Include the numbers in your change notes. `--es perf <layer>` (see getting-start
 
 ## 7. Testing a change
 
-There is no automated test suite yet; changes are verified on devices. For every change:
+Use the checks appropriate to the change. Always run `git diff --check`; for infrastructure
+changes, run `python3 -m unittest discover -s tools/tests -v`. Source/resource checks can validate
+code changes without a signed APK. Create a signed APK with `./build.sh` only when a new build is
+explicitly requested; the build reserves a remote version code.
 
-1. `./build.sh` succeeds with no new warnings you introduced.
-2. Install and exercise the change with the remote (or `adb shell input keyevent …`), including
-   Back and Home from every new screen.
-3. Take screenshots (`adb exec-out screencap -p > shot.png`) of new or changed screens; attach them
-   with the change notes.
-4. If it touches the Home screen, record frame times (see §5).
-5. If it touches permissions, network or storage, test on both an Android 12 device and an
-   **Android 9 / 1 GB RAM** device, and with the network off.
-6. Check `adb logcat -s TvHome AndroidRuntime` for errors and crashes.
+For Home changes, exercise remote focus, Back/Home, persistence and update retention on an emulator
+or an explicitly authorized device. Capture screenshots of new screens and report hardware frame
+times when measured. Test permission and network changes across Android versions when available.
+Always select an explicit ADB serial. Installing on a physical TV, force-stopping apps, migrating
+data, changing components, or switching Home requires explicit authorization; an attached TV alone
+is not permission. Report untested Fire OS behavior and hardware performance honestly.
 
 Checklist for UI changes: legible over bright and dark artwork · nothing clipped when focused ·
 reachable with arrows · Home returns to the dock · 720p and 1080p both look right.

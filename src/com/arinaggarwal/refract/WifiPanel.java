@@ -14,6 +14,7 @@ import android.os.Build;
 import android.provider.Settings;
 import android.text.InputType;
 import android.view.Gravity;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
@@ -189,6 +190,12 @@ final class WifiPanel {
         FrameLayout.LayoutParams tlp = new FrameLayout.LayoutParams(width, a.dp(24));
         tlp.leftMargin = pad; tlp.topMargin = pad;
         panel.addView(title, tlp);
+        TextView more = a.text(11.5f, Ui.font(a, "medium"), 0.8f);
+        more.setGravity(Gravity.END | Gravity.CENTER_VERTICAL);
+        FrameLayout.LayoutParams mlp = new FrameLayout.LayoutParams(a.dp(150), a.dp(24), Gravity.TOP | Gravity.END);
+        mlp.topMargin = pad;
+        mlp.rightMargin = pad + a.dp(8);
+        panel.addView(more, mlp);
         FrameLayout content = new FrameLayout(a);
         content.setClipChildren(false);
         content.setClipToPadding(false);
@@ -227,12 +234,19 @@ final class WifiPanel {
                 () -> "More network options", false, v -> openSettings());
         settings.setTag("settings"); cells.add(settings); y += row + a.dp(8);
         ScrollView scroll = new ScrollView(a);
-        scroll.setClipChildren(false);
+        scroll.setClipChildren(true);
         scroll.addView(content, new ScrollView.LayoutParams(width, y));
-        int height = Math.min(y, a.dp(350));
+        // Five complete rows at most; the header shows which way has more content.
+        int height = Math.min(y, 5 * row + 4 * gap + a.dp(16));
         FrameLayout.LayoutParams slp = new FrameLayout.LayoutParams(width, height);
         slp.leftMargin = pad; slp.topMargin = a.dp(40);
         panel.addView(scroll, slp);
+        Runnable updateMore = () -> {
+            boolean above = scroll.canScrollVertically(-1), below = scroll.canScrollVertically(1);
+            more.setText(above && below ? "\u2191  More  \u2193" : above ? "\u2191  More" : below ? "More  \u2193" : "");
+        };
+        scroll.setOnScrollChangeListener((v, x, sy, ox, oy) -> updateMore.run());
+        scroll.post(updateMore);
         FrameLayout.LayoutParams plp = new FrameLayout.LayoutParams(width + 2 * pad, a.dp(40) + height + pad,
                 Gravity.TOP | Gravity.END);
         plp.topMargin = a.dp(68); plp.rightMargin = a.dockOuter;
@@ -241,6 +255,19 @@ final class WifiPanel {
         View focus = cells.get(0);
         if (selected != null) for (View cell : cells) if (selected.equals(cell.getTag())) { focus = cell; break; }
         focus.requestFocus();
+    }
+
+    /** Move through the logical row order even when a focused row is outside the viewport. */
+    boolean move(int keyCode) {
+        if (keyCode != KeyEvent.KEYCODE_DPAD_UP && keyCode != KeyEvent.KEYCODE_DPAD_DOWN) return true;
+        List<View> cells = a.pickerCells;
+        if (cells.isEmpty()) return true;
+        int index = cells.indexOf(a.getCurrentFocus());
+        if (index < 0) index = 0;
+        else index = Math.max(0, Math.min(cells.size() - 1,
+                index + (keyCode == KeyEvent.KEYCODE_DPAD_DOWN ? 1 : -1)));
+        cells.get(index).requestFocus();
+        return true;
     }
 
     private void openSettings() {

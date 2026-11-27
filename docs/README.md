@@ -1,38 +1,31 @@
-# Refract Launcher documentation
+# Documentation
 
-Refract Launcher (`com.arinaggarwal.refract`) replaces the Android TV home screen with one modelled on
-Apple tvOS 26. Every element was measured against Apple's own tvOS 26 screenshots and the Human
-Interface Guidelines, then tuned to run at 60 fps on a low-end Mali-450 GPU.
+Find the right guide for what you want to do with Refract Custom.
 
-| | |
+## Use the launcher
+
+| Guide | Contents |
 |---|---|
-| ![Home with suggestions](images/home-dock-glass.jpg) | ![Carousel focused](images/carousel-focused.jpg) |
-| Home: suggestions behind the glass dock | Top shelf focused: dock slides away |
-| ![Home with wallpaper](images/home-wallpaper.jpg) | ![Options menu](images/options-menu.jpg) |
-| Below the dock: launcher background | Options menu (hold OK on an app) |
+| [Features](features.md) | Home, remote controls, profiles, search, Wi-Fi, Bluetooth, weather, screensaver, and permissions |
+| [Presentation mode](presentation.md) | Browser pairing, uploads, playback, and the local web API |
+| [Install and setup](install.md) | First install, Home selection, and optional permissions |
 
-## Contents
+## Maintain your installation
 
-- **[Updating your launcher](updating-your-launcher.md)** — build and install future updates.
-- **[Getting started](getting-started.md)** — install the tools, build, run on a TV or the
-  emulator, developer shortcuts, troubleshooting.
-- **[Features](features.md)** — everything Refract does: setup, Home, carousel, weather, Control
-  Center, profiles, inputs, search, screensaver, AirPlay guard, settings, permissions.
-- **[Install and set up](install.md)** — make it the home screen, one-time permissions, undo.
-- **[Presentation mode](presentation.md)** — sending content from a browser, the TV player,
-  start on boot, and the web API.
-- **[Architecture](architecture.md)** — code map, build, design decisions and performance notes.
-- **[Contributing](../CONTRIBUTING.md)** — workflow, code style, design/performance/permission
-  rules and testing.
-
-## At a glance
-
-| Area | What it does |
+| Guide | Contents |
 |---|---|
-| Dock & grid | Frosted Liquid Glass dock; 5:3 cards, 6 per row; 1.2× focus lift; tvOS zoom-to-open |
-| Carousel | Continue Watching first, then Indian news and rotating recommendations (JustWatch, TMDB or Stremio); full screen when idle |
-| Search | Apps, settings and inputs instantly; movies and shows on every service in India with Open / Get; Hindi keyboard, dictation; hold Back to open |
-| Profiles | Up to 3, unique emoji avatars; separate layout, background and history; picker on wake |
-| Control Center | Sleep, Wi-Fi, Do Not Disturb, audio, sleep timer, Bluetooth, accessibility, settings, search |
-| Presentation | Browser upload of images/videos/webpages, looping full-screen playback, start on boot |
-| Settings | A page per section, opened from the gear in Control Center; first-time setup pages |
+| [Updating your launcher](updating-your-launcher.md) | TV-side and computer-assisted updates, preserving data, and recovery |
+| [Root and Fire TV](guides/root-and-fire-tv.md) | What root changes, what stays unprivileged, and device-specific limits |
+| [Custom updates and migration](custom-updates.md) | Permanent signing, version reservations, releases, and historical migration |
+
+## Develop
+
+| Guide | Contents |
+|---|---|
+| [Getting started](getting-started.md) | Toolchain, building, emulator use, and troubleshooting |
+| [Repository map](reference/repository-map.md) | Where the application, assets, tests, and release tools live |
+| [Architecture](architecture.md) | Code responsibilities, design, storage, and performance |
+| [Contributing](../CONTRIBUTING.md) | Code style, UI conventions, validation, and workflow |
+| [Attributions](../ATTRIBUTIONS.md) | Licenses and credits for code, fonts, imagery, and services |
+
+[Back to the project README](../README.md)

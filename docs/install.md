@@ -1,76 +1,50 @@
-> For this personal Fire TV fork, follow **[Custom updates and safe migration](custom-updates.md)**.
-> Keep the original `com.hydrainnit.refract` installed as your fallback.
-
 # Install and set up
 
-## Requirements
+Refract Custom is a separate app with the package `com.arinaggarwal.refract`. An APK from this fork
+cannot update the original `com.hydrainnit.refract` package. The personal target is a Fire TV Cube
+3rd gen on Fire OS 7; the launcher supports Android 7.0 / API 24 and newer, though available Home
+and permission screens vary by device.
 
-- An Android TV box on Android 7.0+ (tested on a Xiaomi Mi Box, `MIBOX4`, Android 12).
-- Developer options and **network debugging** turned on (Settings → Device Preferences → About →
-  click *Build* seven times).
-- A computer with `adb` (Android SDK platform-tools) on the same network.
+## Already installed on the personal Cube
 
-## Build
+Refract Custom is already Home. The original launcher was backed up and then uninstalled. Do not
+repeat the historical migration, disable additional Amazon components, or assume the original is
+still available for rollback. For normal updates, follow [Updating your launcher](updating-your-launcher.md).
+Restoring the original would be a separate recovery operation; see [Custom updates](custom-updates.md).
 
-```sh
-./build.sh
-./build.sh --name 1.0.0-custom.1     # optional display version
-```
+## First install on another device
 
-Every build uses the same permanent custom key and reserves an increasing versionCode.
-See [Custom updates](custom-updates.md) for tool setup, signing-key recovery and GitHub releases.
+1. Download `refract-custom.apk` from the project's [GitHub releases](https://github.com/arinaggarwal1/refract-launcher/releases).
+2. Install it using an installation method supported by the device. When using ADB, select the
+   intended serial explicitly, for example `adb -s TV_IP:5555 install -r refract-custom.apk`.
+3. Open **Refract Custom** and follow setup. Use the device's own Home chooser or settings when
+   offered; availability differs across devices.
+4. Grant optional permissions only for features you want, using the on-screen paths in setup or
+   **Settings → Permissions**.
 
-## Install and make it the home screen
+A build of this personal fork uses the permanent signing identity and a GitHub version reservation.
+Do not create a replacement key for an existing installation. See
+[Build and signing](custom-updates.md) and [Getting started](getting-started.md).
 
-On your rooted Fire TV Cube, use the **[one-time migration procedure](custom-updates.md#one-time-migration-on-your-rooted-cube)**.
-It backs up the working original, installs the custom package alongside it, copies settings before
-first launch, and switches Home only when you explicitly choose. Do not change Amazon component
-states again. Future updates are simply `adb -s TV_IP:5555 install -r build/refract-custom.apk`.
+## Permissions and optional integrations
 
-## One-time permissions
-
-Refract asks for these **on screen** (setup's last page and Settings → Permissions): Android's prompts,
-the system's own settings screens, or Refract's accessibility switch. The commands below are only a
-last resort for TVs that have no such screen.
-
-| Feature | Command |
+| Feature | What it needs |
 |---|---|
-| Continue Watching + Do Not Disturb | `adb shell cmd notification allow_listener com.arinaggarwal.refract/com.arinaggarwal.refract.MediaWatchService` |
-| Power Off + Sleep Timer | `adb shell dpm set-active-admin com.arinaggarwal.refract/.SleepReceiver\$Admin` |
-| Wi-Fi name in Control Center | `adb shell pm grant com.arinaggarwal.refract android.permission.ACCESS_FINE_LOCATION` |
-| Search dictation (microphone) | `adb shell pm grant com.arinaggarwal.refract android.permission.RECORD_AUDIO` — not normally needed: without it, Search uses the TV's own voice prompt |
+| Wi-Fi name and nearby networks | Location permission; Wi-Fi scanning also needs location services enabled. Connection options vary by Android version and network security. |
+| Bluetooth devices | On Android 12+, Nearby devices permission. Direct audio controls depend on the device and OS. |
+| Continue Watching and Do Not Disturb | Notification access, where the TV supports it. |
+| Power Off, Sleep Timer, and full Clean | Supported device-admin or the Refract accessibility service, enabled through the TV's settings. |
+| Voice search | Microphone permission or the TV's own voice prompt, depending on the selected input method. |
+| Movies and TMDB content | Your own TMDB key, entered in Settings. Other recommendation sources may not need a key. |
+| AirPlay receiver | A separate compatible receiver app, such as [AirPlay Server](https://github.com/jqssun/android-airplay-server). |
 
-## Optional: recommendation source
+See [Features](features.md) for details and [Root and Fire TV](guides/root-and-fire-tv.md) for the
+limits of privileged device operations. Refract can request access on screen where supported;
+some firmware omits or limits these paths.
 
-Recommendations use JustWatch by default (no setup). **Settings → Top Shelf → Source** also offers
-**Stremio** (Cinemeta's popular movies and series, no setup; titles open in the Stremio app, or in
-Nuvio when only Nuvio is installed) and **TMDB**. For TMDB, enter a free API key from themoviedb.org (Settings → API). The short v3 *API Key* is
-easiest to type with a remote. It can also be set from a computer:
+## Returning to another launcher
 
-```sh
-adb shell am start -n com.arinaggarwal.refract/.SettingsActivity --es tmdb_token <token>
-```
-
-## Optional: AirPlay receiver
-
-To AirPlay from a Mac, iPhone or iPad to the TV, install the open-source
-[AirPlay Server](https://github.com/jqssun/android-airplay-server) app (GPL-3.0; a separate app, not
-part of Refract). Download `app-release.apk` from its
-[latest release](https://github.com/jqssun/android-airplay-server/releases/latest) and install it:
-
-```sh
-adb install -r app-release.apk
-```
-
-Open it once from Refract, set a name (e.g. "Mi Box") in its Settings and keep *Start on boot* on. The
-TV then appears in AirPlay on Apple devices on the same Wi-Fi. Refract's AirPlay guard keeps it visible
-after the TV sleeps ([features](features.md#airplay-with-the-airplay-server-app)). Tested with
-version 0.0.36 on a Mi Box (Android 12) and an Android 9 TV.
-
-## Undo
-
-Switch back to the still-installed original, preserving both apps' data:
-
-```sh
-python3 tools/tv.py --serial TV_IP:5555 rollback-home
-```
+Use the device's supported Home selection flow. The optional helper's `rollback-home` operation
+only applies if the original package is actually installed; it cannot restore an uninstalled app or
+its data. Do not uninstall or clear Refract Custom to troubleshoot an update, because doing so can
+remove profiles, layouts, preferences, and Keystore-backed keys.

@@ -3172,7 +3172,9 @@ public class MainActivity extends Activity {
             int key = ev.getKeyCode();
             if (key == KeyEvent.KEYCODE_DPAD_UP || key == KeyEvent.KEYCODE_DPAD_DOWN
                     || key == KeyEvent.KEYCODE_DPAD_LEFT || key == KeyEvent.KEYCODE_DPAD_RIGHT) {
-                if (ev.getAction() == KeyEvent.ACTION_DOWN) pickerMove(key);
+                if (ev.getAction() == KeyEvent.ACTION_DOWN) {
+                    if (wifiPanel != null) wifiPanel.move(key); else pickerMove(key);
+                }
                 return true;
             }
             if (key == KeyEvent.KEYCODE_MENU) return true;
@@ -3224,7 +3226,9 @@ public class MainActivity extends Activity {
             }
             if (pk == KeyEvent.KEYCODE_DPAD_UP || pk == KeyEvent.KEYCODE_DPAD_DOWN
                     || pk == KeyEvent.KEYCODE_DPAD_LEFT || pk == KeyEvent.KEYCODE_DPAD_RIGHT) {
-                if (pd) pickerMove(pk);
+                if (pd) {
+                    if (wifiPanel != null) wifiPanel.move(pk); else pickerMove(pk);
+                }
                 return true;
             }
             return super.dispatchKeyEvent(ev);

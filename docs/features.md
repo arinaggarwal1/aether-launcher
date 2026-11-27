@@ -37,7 +37,7 @@ Settings → Home → **Run setup again** repeats it. If Home is pressed mid-way
 
 Settings > About > **Check for Updates** checks published GitHub releases on demand. A newer
 release can be downloaded and verified on the TV, then installed through the TV's own confirmation
-screen. The initial updater version must first be installed using ADB.
+screen. The installed version must include the updater.
 
 ## Home screen
 
@@ -212,7 +212,10 @@ A Refract Remote mapping can open Control Center over another app. In Refract Re
 choose **Something else** and then **Refract Control Center**; Back closes it and returns to the app.
 Both apps need versions containing this shortcut.
 
-The Wi-Fi panel scans for networks with Location permission. On Fire OS 7 it can turn Wi-Fi on or off, connect saved networks and join open or WPA/WPA2 personal networks. Other security types and newer Android versions use system Wi-Fi settings.
+The Wi-Fi panel shows up to five rows at a time and indicates when more can be reached with the
+remote. It scans with Location permission and location services enabled. On Fire OS 7 it can turn
+Wi-Fi on or off, connect saved networks and join open or WPA/WPA2 personal networks. Other security
+types and newer Android versions use system Wi-Fi settings.
 
 The Bluetooth panel lists paired devices. On Fire OS 7, select a paired audio device to connect
 or disconnect it; other devices and pairing use the TV's Bluetooth settings. Android 12 and later
@@ -398,8 +401,8 @@ and white glass in Light. OK opens the playing app; it hides 8 seconds after pla
 ## API & Content Services
 
 Optional keys, offered in setup (skippable) and in Settings → Content & Search → API Keys: TMDB (v3 key
-or v4 token). Previously saved Pexels keys are kept; the Wikimedia photo of the day needs no key. Keys are typed hidden (Show reveals them), stored encrypted with an
-Android Keystore AES-GCM key, and only ever shown masked. TMDB can be tested. Its status is one of
+or v4 token). Previously saved Pexels keys are kept; the Wikimedia photo of the day needs no key. Keys are typed hidden (Show reveals them) and stored with Android Keystore AES-GCM when available.
+If the device keystore fails, the app falls back to app-private unencrypted storage. TMDB can be tested. Its status is one of
 not configured, unverified, valid, invalid, rate-limited, network error or service unavailable, and
 an outage is never reported as a bad key. The Pexels API is paused, so a Pexels key is saved but not
 checked or used, and no Pexels API requests are made. Existing built-in photographs still use the Pexels image CDN.
