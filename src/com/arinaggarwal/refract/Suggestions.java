@@ -362,7 +362,7 @@ final class Suggestions {
                     it.title = ct.optString("title");
                     it.overview = ct.optString("shortDescription");
                     it.backdrop = "https://images.justwatch.com" + bds.getJSONObject(0).getString("backdropUrl")
-                            .replace("{profile}", "s1440").replace("{format}", "jpg");
+                            .replace("{profile}", "s1920").replace("{format}", "jpg");
                     it.logo = "";
                     int y = ct.optInt("originalReleaseYear", 0);
                     it.year = y > 0 ? String.valueOf(y) : "";

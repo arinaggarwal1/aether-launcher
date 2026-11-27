@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.net.wifi.ScanResult;
@@ -181,8 +182,8 @@ final class WifiPanel {
         while (layer.getChildCount() > 1) layer.removeViewAt(1);
         int width = a.dp(284), pad = a.dp(14), row = a.dp(58), gap = a.dp(10);
         FrameLayout panel = new FrameLayout(a);
-        panel.setClipChildren(false);
-        panel.setClipToPadding(false);
+        panel.setClipChildren(true);
+        panel.setClipToPadding(true);
         panel.setBackground(a.theme.panel(a.dp(30), a.unit));
         panel.setElevation(a.dp(20));
         TextView title = a.text(15, Ui.font(a, "semibold"), 1f);
@@ -233,14 +234,28 @@ final class WifiPanel {
         View settings = a.ccTile(content, a.dp(8), y, width - a.dp(16), row, "gear", "Wi-Fi Settings",
                 () -> "More network options", false, v -> openSettings());
         settings.setTag("settings"); cells.add(settings); y += row + a.dp(8);
-        ScrollView scroll = new ScrollView(a);
+        // Focused tiles scale up and have elevation. Clip the entire scrolling drawing pass,
+        // including those effects, to the viewport so rows cannot overlap the header or panel.
+        ScrollView scroll = new ScrollView(a) {
+            @Override protected void dispatchDraw(Canvas canvas) {
+                int save = canvas.save();
+                canvas.clipRect(getScrollX(), getScrollY(), getScrollX() + getWidth(), getScrollY() + getHeight());
+                super.dispatchDraw(canvas);
+                canvas.restoreToCount(save);
+            }
+        };
         scroll.setClipChildren(true);
+        scroll.setClipToPadding(true);
         scroll.addView(content, new ScrollView.LayoutParams(width, y));
         // Five complete rows at most; the header shows which way has more content.
         int height = Math.min(y, 5 * row + 4 * gap + a.dp(16));
         FrameLayout.LayoutParams slp = new FrameLayout.LayoutParams(width, height);
         slp.leftMargin = pad; slp.topMargin = a.dp(40);
-        panel.addView(scroll, slp);
+        FrameLayout viewport = new FrameLayout(a);
+        viewport.setClipChildren(true);
+        viewport.setClipToPadding(true);
+        viewport.addView(scroll, new FrameLayout.LayoutParams(-1, -1));
+        panel.addView(viewport, slp);
         Runnable updateMore = () -> {
             boolean above = scroll.canScrollVertically(-1), below = scroll.canScrollVertically(1);
             more.setText(above && below ? "\u2191  More  \u2193" : above ? "\u2191  More" : below ? "More  \u2193" : "");

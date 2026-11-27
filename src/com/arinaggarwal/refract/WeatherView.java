@@ -15,7 +15,7 @@ import android.view.View;
 
 /**
  * Weather on Home, in Apple Weather's style. At rest it is a glass pill the height of the status
- * pill and level with it: icon, temperature, then the condition over the place and high/low. Its
+ * pill and level with it: icon and temperature. Its
  * width follows the text (with the place shortened, never touching the edge). Focused, the same
  * glass grows from the pill's corner into a card: place, large temperature, condition and
  * high/low, the next six hours and a 5-day list with temperature range bars.
@@ -44,7 +44,7 @@ final class WeatherView extends View {
     private final Path arrow = new Path();
     private android.animation.ValueAnimator morph;
     /** The pill's laid-out text and width, computed when the data changes (not per frame). */
-    private String pillTemp = "", pillTop = "", pillSub = "";
+    private String pillTemp = "";
     private float pillW;
 
     WeatherView(Context c, float unit) {
@@ -70,42 +70,17 @@ final class WeatherView extends View {
         return pillW;
     }
 
-    /** Pill text and width: the place is shortened with an ellipsis so the text keeps its margins. */
+    /** Compact resting pill: only the condition icon and current temperature. */
     private void layoutPill() {
-        Weather.Data d = data;
-        float pad = 14 * u, is = 26 * u, gap = 8 * u, endPad = 18 * u;
-        if (d == null) {
+        if (data == null) {
             pillTemp = "";
-            pillTop = "Weather";
-            pillSub = "";
             size(12, medium);
-            pillW = pad + p.measureText("Getting the weather\u2026") + endPad;
+            pillW = 28 * u + p.measureText("Weather");
             return;
         }
-        pillTemp = d.temp + "\u00b0";
+        pillTemp = data.temp + "\u00b0";
         size(20, regular);
-        float tw = p.measureText(pillTemp);
-        pillTop = Weather.describe(d.code, d.day);
-        String hl = "H:" + d.max + "\u00b0 L:" + d.min + "\u00b0";
-        size(11.5f, semibold);
-        float topW = p.measureText(pillTop);
-        size(11.5f, medium);
-        float hlW = p.measureText(hl);
-        float fixed = pad + is + gap + tw + 10 * u + endPad;
-        float textMax = PILL_MAX_W * u - fixed;
-        String place = d.place;
-        if (!place.isEmpty()) {
-            float room = textMax - hlW - p.measureText("  ");
-            place = room > 24 * u ? TextUtils.ellipsize(place, p, room, TextUtils.TruncateAt.END).toString() : "";
-        }
-        pillSub = place.isEmpty() ? hl : place + "  " + hl;
-        float subW = p.measureText(pillSub);
-        if (topW > textMax) {
-            size(11.5f, semibold);
-            pillTop = TextUtils.ellipsize(pillTop, p, textMax, TextUtils.TruncateAt.END).toString();
-            topW = textMax;
-        }
-        pillW = fixed + Math.min(textMax, Math.max(topW, subW));
+        pillW = 14 * u + 26 * u + 8 * u + p.measureText(pillTemp) + 14 * u;
     }
 
     /** Grows into the card (focused) or back into the pill; draw-only, about a quarter second. */
@@ -157,15 +132,11 @@ final class WeatherView extends View {
     private void drawPill(Canvas c, float a) {
         float h = pillHeight(), pad = 14 * u, is = 26 * u;
         if (data == null) {
-            text(c, "Getting the weather\u2026", pad, h / 2f + 4 * u, 12, medium, 0.7f * a, Paint.Align.LEFT);
+            text(c, "Weather", pad, h / 2f + 4 * u, 12, medium, 0.7f * a, Paint.Align.LEFT);
             return;
         }
         icon(c, data.code, data.day, pad, (h - is) / 2f, is, a);
-        float tx = pad + is + 8 * u;
-        float tw = text(c, pillTemp, tx, h / 2f + 7 * u, 20, regular, a, Paint.Align.LEFT);
-        float cx = tx + tw + 10 * u;
-        text(c, pillTop, cx, h / 2f - 2 * u, 11.5f, semibold, a, Paint.Align.LEFT);
-        text(c, pillSub, cx, h / 2f + 12 * u, 11.5f, medium, 0.72f * a, Paint.Align.LEFT);
+        text(c, pillTemp, pad + is + 8 * u, h / 2f + 7 * u, 20, regular, a, Paint.Align.LEFT);
     }
 
     /** The card, laid out like the Apple Weather widget in the reference. */

@@ -689,11 +689,14 @@ public class MainActivity extends Activity {
         LinearLayout.LayoutParams alp = new LinearLayout.LayoutParams(av, av);
         alp.leftMargin = dp(6);
         clockBox.addView(avatar, alp);
-        avatar.setOnFocusChangeListener((v, has) ->
-                v.animate().scaleX(has ? 1.18f : 1f).scaleY(has ? 1.18f : 1f).translationZ(has ? dp(8) : 0)
-                        .setDuration(200).setInterpolator(LIFT).start());
+        avatar.setOnFocusChangeListener((v, has) -> {
+            v.animate().scaleX(has ? 1.18f : 1f).scaleY(has ? 1.18f : 1f).translationZ(has ? dp(8) : 0)
+                    .setDuration(200).setInterpolator(LIFT).start();
+            statusFocusChanged(has);
+        });
         avatar.setOnClickListener(v -> showProfilePicker(false));
         statusRow = new ArrayList<>(Arrays.asList(moviesButton, searchButton, settingsButton, ccButton, avatar));
+        setStatusExpanded(false);
 
         // The status pill and, left of it while music plays in the background, the Now Playing pill.
         statusBar = new LinearLayout(this);
@@ -775,12 +778,36 @@ public class MainActivity extends Activity {
             b.setImageBitmap(Glyphs.get(glyph, dp(19), has ? 0xFF111114 : ink));
             v.setElevation(has ? dp(4) : 0);
             v.animate().scaleX(has ? 1.14f : 1f).scaleY(has ? 1.14f : 1f).setDuration(200).setInterpolator(LIFT).start();
+            statusFocusChanged(has);
         });
         b.setOnClickListener(v -> action.run());
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(size, size);
         lp.leftMargin = dp(4);
         clockBox.addView(b, lp);
         return b;
+    }
+
+    /** Keep time and profile visible; reveal the other controls while using the status row. */
+    void setStatusExpanded(boolean expanded) {
+        if (statusRow == null) return;
+        for (int i = 0; i < statusRow.size() - 1; i++) {
+            View button = statusRow.get(i);
+            int visibility = expanded ? View.VISIBLE : View.GONE;
+            if (button.getVisibility() != visibility) button.setVisibility(visibility);
+        }
+        if (netIcon != null) netIcon.setVisibility(expanded ? View.VISIBLE : View.GONE);
+    }
+
+    void statusFocusChanged(boolean focused) {
+        if (focused) setStatusExpanded(true);
+        else handler.post(() -> {
+            if (!statusFocused() && pickerLayer == null && menuLayer == null) setStatusExpanded(false);
+        });
+    }
+
+    void focusStatus(View button) {
+        setStatusExpanded(true);
+        button.requestFocus();
     }
 
     void buildGrid() {
@@ -1752,11 +1779,12 @@ public class MainActivity extends Activity {
         heroOverview.setVisibility(View.GONE);
         heroButton.setVisibility(View.GONE);
         FrameLayout.LayoutParams ilp = new FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.BOTTOM | Gravity.START);
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.TOP | Gravity.START);
+        // Reference: title starts about 4% from the left, below the weather capsule.
         int room = dp(12);
         heroInfo.setPadding(room, room, room, room);
         ilp.leftMargin = side - room;
-        ilp.bottomMargin = dp(40) - room;
+        ilp.topMargin = dp(76) - room;
         root.addView(heroInfo, ilp);
         heroInfo.setTranslationY(heroInfoRestY());
 
@@ -1804,10 +1832,10 @@ public class MainActivity extends Activity {
         int w = b.getWidth(), h = b.getHeight();
         Canvas c = new Canvas(b);
         Paint p = new Paint(Paint.DITHER_FLAG);
-        p.setShader(new LinearGradient(0, 0, w * 0.75f, 0, new int[]{0xCC000000, 0x66000000, 0x00000000},
+        p.setShader(new LinearGradient(0, 0, w * 0.75f, 0, new int[]{0x99000000, 0x44000000, 0x00000000},
                 null, Shader.TileMode.CLAMP));
         c.drawRect(0, 0, w * 0.75f, h, p);
-        p.setShader(new LinearGradient(0, 0, 0, h, new int[]{0x14000000, 0x40000000, 0xB3000000},
+        p.setShader(new LinearGradient(0, 0, 0, h, new int[]{0x08000000, 0x1A000000, 0x99000000},
                 null, Shader.TileMode.CLAMP));
         c.drawRect(0, 0, w, h, p);
         topShade(c, w, h);
@@ -1862,12 +1890,12 @@ public class MainActivity extends Activity {
         return out;
     }
 
-    /** Info block sits just above the dock while a dock app is focused... */
+    /** The info block rests in the upper-left corner. */
     float heroInfoRestY() {
-        return -(screenH - shelfH) + dp(40) - dp(36);
+        return 0;
     }
 
-    /** ...and the page dots sit centred between the info and the dock. */
+    /** The page dots sit above the dock. */
     float heroDotsRestY() {
         return -(screenH - shelfH) + dp(22) - dp(12);
     }
@@ -1955,7 +1983,7 @@ public class MainActivity extends Activity {
         if (switcher == null) return;
         if (!"suggest".equals(shelfMode)) setShelfMode("suggest");
         boolean show = tabsShown();
-        if (!show && switcher.isFocused()) ccButton.requestFocus();
+        if (!show && switcher.isFocused()) focusStatus(ccButton);
         switcher.setVisibility(show ? View.VISIBLE : View.GONE);
     }
 
@@ -1973,7 +2001,8 @@ public class MainActivity extends Activity {
 
     /** Up from the shelf/dock: the tab bar, or the status row when the tab bar is hidden. */
     void focusTop() {
-        (switcher != null && switcher.getVisibility() == View.VISIBLE ? switcher : ccButton).requestFocus();
+        if (switcher != null && switcher.getVisibility() == View.VISIBLE) switcher.requestFocus();
+        else focusStatus(ccButton);
     }
 
     boolean continueMode() {
@@ -2146,7 +2175,7 @@ public class MainActivity extends Activity {
         }
         int want = index;
         io.execute(() -> {
-            Bitmap raw = Suggestions.image(this, it.backdrop, "original", lowRam ? Math.min(1280, screenW) : screenW);
+            Bitmap raw = Suggestions.image(this, it.backdrop, "original", lowRam ? Math.min(1920, screenW) : screenW);
             Bitmap bd = "news".equals(it.type) ? bakeNews(raw) : bakeScrims(raw);
             Bitmap bdBlur = Ui.glassBackdrop(bd, 160, 90);
             String logoPath = it.providerId == Movies.TMDB_MOVIE ? Movies.logoFor(this, it) : Suggestions.logoFor(this, it);
@@ -2169,6 +2198,7 @@ public class MainActivity extends Activity {
     /** Title/meta/overview for an item, applied in the same frame as its artwork. */
     void applyHeroInfo(Suggestions.Item it, Bitmap logo, int dir) {
         boolean news = "news".equals(it.type);
+        heroMeta.setVisibility(news || shelfView.isFocused() ? View.VISIBLE : View.GONE);
         if (removeSelected) selectRemove(false);
         heroRemove.setVisibility(!it.pkg.isEmpty() && shelfView.isFocused() ? View.VISIBLE : View.GONE);
         if (shelfView.isFocused()) {
@@ -2190,6 +2220,7 @@ public class MainActivity extends Activity {
         heroTitle.setVisibility(View.VISIBLE);
         heroLogo.setImageDrawable(null);
         heroLogo.setVisibility(View.GONE);
+        heroProvider.setImageDrawable(null);
         selectStrip(heroIndex);
         if (!it.pkg.isEmpty()) {  // Continue Watching entry
             List<String> meta = new ArrayList<>();
@@ -2201,7 +2232,7 @@ public class MainActivity extends Activity {
             heroBtnText.setText("\u25B6  Resume");
             try {
                 heroProvider.setImageDrawable(getPackageManager().getApplicationIcon(it.pkg));
-                heroProvider.setVisibility(View.VISIBLE);
+                heroProvider.setVisibility(shelfView.isFocused() ? View.VISIBLE : View.GONE);
             } catch (PackageManager.NameNotFoundException e) {
                 heroProvider.setVisibility(View.GONE);
             }
@@ -2242,7 +2273,7 @@ public class MainActivity extends Activity {
             heroOverview.setMaxLines(3);
             Ui.textSize(heroOverview, 13);
             heroOverview.animate().cancel();
-            heroOverview.setVisibility(it.overview.isEmpty() ? View.GONE : View.VISIBLE);
+            heroOverview.setVisibility(it.overview.isEmpty() || !shelfView.isFocused() ? View.GONE : View.VISIBLE);
             heroOverview.setAlpha(0.85f);
             heroProvider.setVisibility(View.GONE);
             heroBtnIcon.setVisibility(View.GONE);
@@ -2272,7 +2303,7 @@ public class MainActivity extends Activity {
         Suggestions.Provider service = it.provider();  // Attribution stays with the service, even with a player override.
         int icon = service == null ? 0 : getResources().getIdentifier("provider_" + service.jwShort, "drawable", getPackageName());
         heroProvider.setImageResource(icon);
-        heroProvider.setVisibility(icon == 0 ? View.GONE : View.VISIBLE);
+        heroProvider.setVisibility(icon == 0 || !shelfView.isFocused() ? View.GONE : View.VISIBLE);
         heroBtnIcon.setVisibility(View.GONE);
         if (logo != null) {
             heroLogo.setImageBitmap(logo);
@@ -2349,6 +2380,8 @@ public class MainActivity extends Activity {
         if (!has) heroRequested = false;
         if (has) {
             setHeroShown(true);
+            heroMeta.setVisibility(View.VISIBLE);
+            if (heroProvider.getDrawable() != null) heroProvider.setVisibility(View.VISIBLE);
             heroButton.animate().scaleX(1.08f).scaleY(1.08f).setDuration(240).setInterpolator(LIFT).start();
             heroButton.setElevation(dp(10));
             heroBtnBg.setColor(0xFFFFFFFF);
@@ -2367,6 +2400,8 @@ public class MainActivity extends Activity {
             heroButton.animate().alpha(1f).setDuration(400).setStartDelay(120).start();
             handler.removeCallbacks(heroAdvance);
         } else {
+            if (!heroIsNews()) heroMeta.setVisibility(View.GONE);
+            heroProvider.setVisibility(View.GONE);
             heroButton.animate().scaleX(1f).scaleY(1f).setDuration(180).start();
             heroButton.setElevation(0);
             heroBtnBg.setColor(0x47FFFFFF);
@@ -2414,8 +2449,7 @@ public class MainActivity extends Activity {
 
     /** News and Movies Home keep their summary on screen; recommendations show it only when focused. */
     boolean heroKeepsOverview() {
-        return heroIsNews() || heroIndex >= 0 && heroIndex < heroItems.size()
-                && heroItems.get(heroIndex).providerId == Movies.TMDB_MOVIE;
+        return heroIsNews();
     }
 
     /** News stories have no button: they are read right on the shelf. */
@@ -2486,7 +2520,7 @@ public class MainActivity extends Activity {
                 case KeyEvent.KEYCODE_DPAD_RIGHT:
                     // Past the last tab, Right continues to the status row (Control Center).
                     if (down) {
-                        if (continueMode()) ccButton.requestFocus();
+                        if (continueMode()) focusStatus(ccButton);
                         else setShelfMode("continue");
                     }
                     return true;
@@ -2494,7 +2528,7 @@ public class MainActivity extends Activity {
                 case KeyEvent.KEYCODE_ENTER:
                     if (!down) setShelfMode(continueMode() ? "suggest" : "continue");
                     return true;
-                case KeyEvent.KEYCODE_DPAD_UP: if (down) ccButton.requestFocus(); return true;
+                case KeyEvent.KEYCODE_DPAD_UP: if (down) focusStatus(ccButton); return true;
                 case KeyEvent.KEYCODE_DPAD_DOWN:
                 case KeyEvent.KEYCODE_BACK:
                     if (down) {
@@ -5121,9 +5155,7 @@ public class MainActivity extends Activity {
             pickerLayer = null;
             l.animate().alpha(0f).setDuration(200).withEndAction(() -> root.removeView(l)).start();
         }
-        if (popoverReturn != null && popoverReturn.isAttachedToWindow()) popoverReturn.requestFocus();
-        else goTop();
-        popoverReturn = null;
+        restorePopoverFocus();
     }
 
     void releaseMovies() {
@@ -5295,7 +5327,7 @@ public class MainActivity extends Activity {
         if (show == shown) return;
         if (!show) {
             npKey = null;
-            if (nowPlaying.isFocused()) ccButton.requestFocus();
+            if (nowPlaying.isFocused()) focusStatus(ccButton);
             nowPlaying.setPlaying(false, true);
             nowPlaying.setVisibility(View.GONE);
             statusRow.remove(nowPlaying);
@@ -5514,9 +5546,7 @@ public class MainActivity extends Activity {
             pickerLayer = null;
             l.animate().alpha(0f).setDuration(200).withEndAction(() -> root.removeView(l)).start();
         }
-        if (popoverReturn != null && popoverReturn.isAttachedToWindow()) popoverReturn.requestFocus();
-        else goTop();
-        popoverReturn = null;
+        restorePopoverFocus();
     }
 
     final List<View> hiddenUnderSearch = new ArrayList<>();
@@ -5695,8 +5725,14 @@ public class MainActivity extends Activity {
         l.animate().alpha(0f).setDuration(220).withEndAction(() -> root.removeView(l)).start();
         weatherOpen = false;
         weatherCard.animate().alpha(weatherAlpha()).setDuration(220).start();
-        if (popoverReturn != null && popoverReturn.isAttachedToWindow()) popoverReturn.requestFocus();
-        else goTop();
+        restorePopoverFocus();
+    }
+
+    void restorePopoverFocus() {
+        if (popoverReturn != null && popoverReturn.isAttachedToWindow()) {
+            if (statusRow != null && statusRow.contains(popoverReturn)) setStatusExpanded(true);
+            if (!popoverReturn.requestFocus()) goTop();
+        } else goTop();
         popoverReturn = null;
     }
 
