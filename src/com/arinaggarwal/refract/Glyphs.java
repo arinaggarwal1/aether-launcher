@@ -310,6 +310,10 @@ final class Glyphs {
                 c.drawRect(r, dot);
                 break;
             }
+            case "close":
+                c.drawLine(s * 0.25f, s * 0.25f, s * 0.75f, s * 0.75f, p);
+                c.drawLine(s * 0.75f, s * 0.25f, s * 0.25f, s * 0.75f, p);
+                break;
             case "refresh": {  // circular arrow
                 r.set(s * 0.2f, s * 0.2f, s * 0.8f, s * 0.8f);
                 c.drawArc(r, -60, 300, false, p);

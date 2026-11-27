@@ -201,11 +201,22 @@ tile turns solid white.
 |---|---|
 | Power Off | Puts the TV to sleep (see [Permissions](#permissions)) |
 | Memory | Usage bar; OK closes the apps opened from Home since the last clean |
-| Wi-Fi | Network name; opens Wi-Fi settings |
+| Wi-Fi | Glass panel with nearby networks, connection controls and a link to Wi-Fi settings |
 | Do Not Disturb | On / off |
-| Audio | Current output; opens sound settings |
+| Audio | Shows TV/HDMI output and paired Bluetooth audio devices; select an output |
 | Sleep Timer | Open a timer editor with one-minute adjustments, hour-and-minute formatting, quick presets, and controls to start, update, or turn off the timer |
-| Round shortcuts | Inputs (TVs with inputs; Accessibility otherwise), Bluetooth/controllers, Settings, Search |
+| Bluetooth | Paired devices and connection controls |
+| Round shortcuts | Inputs, Do Not Disturb, Settings, Refresh |
+
+A Refract Remote mapping can open Control Center over another app. In Refract Remote's button editor,
+choose **Something else** and then **Refract Control Center**; Back closes it and returns to the app.
+Both apps need versions containing this shortcut.
+
+The Wi-Fi panel scans for networks with Location permission. On Fire OS 7 it can turn Wi-Fi on or off, connect saved networks and join open or WPA/WPA2 personal networks. Other security types and newer Android versions use system Wi-Fi settings.
+
+The Bluetooth panel lists paired devices. On Fire OS 7, select a paired audio device to connect
+or disconnect it; other devices and pairing use the TV's Bluetooth settings. Android 12 and later
+ask for Nearby devices access to show the list and use system settings for connections.
 
 ![Control Center](images/control-center.jpg)
 
@@ -220,11 +231,12 @@ tile turns solid white.
 
 ## Inputs
 
-Only on TVs with hardware inputs (HDMI, AV, component, tuner): an **Inputs** card starts first in the
+On TVs with hardware inputs (HDMI, AV, component, tuner), an **Inputs** card starts first in the
 dock and an Inputs shortcut sits in Control Center. The picker shows each input with its connector
 icon (HDMI, AV, component, S-Video, VGA/DVI, DisplayPort, SCART, USB, antenna); a plugged-in USB
 drive appears too. App channel sources (e.g. Mi TV+) are not inputs. The card can be moved, hidden
-or switched off (Settings → Inputs).
+or switched off (Settings → Inputs). On a Fire TV Cube, the TV's separate HDMI ports are not
+exposed as inputs; Alexa equipment control can switch compatible TVs by voice.
 
 ![Input picker](images/inputs-picker.jpg)
 

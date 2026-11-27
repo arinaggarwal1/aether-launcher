@@ -76,6 +76,7 @@ import java.util.Set;
 /** tvOS-style home screen: blurred backdrop, top shelf title, rounded app tile grid. */
 public class MainActivity extends Activity {
 
+    boolean overlayOnly;
     static final int COLS = 6;
     ArtworkServer artworkServer;
     static final String SETTINGS_KEY = "special:settings";
@@ -204,6 +205,7 @@ public class MainActivity extends Activity {
         // The wallpaper/artwork always covers the screen: skip the window's own full-screen fill
         // (this Mali-450 GPU is fill-rate bound, so every hidden full-screen layer costs frames).
         getWindow().setBackgroundDrawable(null);
+        overlayOnly = this instanceof ControlCenterActivity;
         prefs = Profiles.homePrefs(this);
         theme = Theme.of(this);
         moviesTheme = Movies.homeTheme(this);
@@ -224,6 +226,16 @@ public class MainActivity extends Activity {
         radius = Math.round(tileW * 0.071f);  // Apple's tvOS 26 card corner: ~7% of card width
         shelfH = (int) (screenH * 0.73f);    // dock top sits ~73% down the screen
         dockPadV = dp(20);
+
+        if (overlayOnly) {
+            Clicks.init(this);
+            inputs = Inputs.list(this);
+            root = new FrameLayout(this);
+            root.setBackgroundColor(Color.TRANSPARENT);
+            setContentView(root);
+            showControlCenter();
+            return;
+        }
 
         Clicks.init(this);
         android.app.ActivityManager amgr = getSystemService(android.app.ActivityManager.class);
@@ -275,6 +287,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
+        if (overlayOnly) { showControlCenter(); return; }
         if (intent.getBooleanExtra("pick_profile", false)) {
             closeMenu();
             if (launchOverlay != null) finishLaunchReturn();
@@ -357,6 +370,17 @@ public class MainActivity extends Activity {
     protected void onResume() {
         super.onResume();
         resumed = true;
+        if (overlayOnly) {
+            if (bluetoothSettingsOpen) {
+                bluetoothSettingsOpen = false;
+                if (pickerLayer != null && "bluetooth".equals(pickerLayer.getTag())) refreshBluetoothPanel();
+            }
+            return;
+        }
+        if (bluetoothSettingsOpen) {
+            bluetoothSettingsOpen = false;
+            if (pickerLayer != null && "bluetooth".equals(pickerLayer.getTag())) refreshBluetoothPanel();
+        }
         // Appearance changed in Settings: rebuild Home in the new colours (state lives in prefs).
         if (Theme.of(this) != theme) {
             recreate();
@@ -459,6 +483,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onStop() {
         super.onStop();
+        if (overlayOnly) return;
         if (!photoWanted) releaseGridPhoto();
         stopNowPlaying();
     }
@@ -466,7 +491,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onStart() {
         super.onStart();
-        startNowPlaying();
+        if (!overlayOnly) startNowPlaying();
     }
 
     @Override
@@ -489,6 +514,12 @@ public class MainActivity extends Activity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        if (wifiPanel != null) { wifiPanel.close(); wifiPanel = null; }
+        if (bluetoothAudio != null) {
+            android.bluetooth.BluetoothAdapter adapter = android.bluetooth.BluetoothAdapter.getDefaultAdapter();
+            if (adapter != null) adapter.closeProfileProxy(android.bluetooth.BluetoothProfile.A2DP, bluetoothAudio);
+            bluetoothAudio = null;
+        }
         if (artworkServer != null) artworkServer.close();
         photoFetch.shutdownNow();
         npIo.shutdownNow();
@@ -3130,6 +3161,23 @@ public class MainActivity extends Activity {
 
     @Override
     public boolean dispatchKeyEvent(KeyEvent ev) {
+        if (overlayOnly && ev.getKeyCode() == KeyEvent.KEYCODE_BACK) {
+            if (ev.getAction() == KeyEvent.ACTION_UP) {
+                if (pickerLayer != null && !"control-center".equals(pickerLayer.getTag())) showControlCenter();
+                else finish();
+            }
+            return true;
+        }
+        if (overlayOnly && pickerLayer != null) {
+            int key = ev.getKeyCode();
+            if (key == KeyEvent.KEYCODE_DPAD_UP || key == KeyEvent.KEYCODE_DPAD_DOWN
+                    || key == KeyEvent.KEYCODE_DPAD_LEFT || key == KeyEvent.KEYCODE_DPAD_RIGHT) {
+                if (ev.getAction() == KeyEvent.ACTION_DOWN) pickerMove(key);
+                return true;
+            }
+            if (key == KeyEvent.KEYCODE_MENU) return true;
+            return super.dispatchKeyEvent(ev);
+        }
         if (launchOverlay != null) return true;
         // Idle full-screen carousel: the first press only brings the Home Screen back.
         if (idle) {
@@ -3701,6 +3749,7 @@ public class MainActivity extends Activity {
         stopSway(null);
         popoverReturn = ccButton;
         FrameLayout layer = new FrameLayout(this);
+        layer.setTag("control-center");
         layer.setClickable(true);
         layer.setClipChildren(false);
         View shade = new View(this);
@@ -3725,33 +3774,28 @@ public class MainActivity extends Activity {
             if (!SleepReceiver.sleepNow(this)) Perms.requestAdmin(this);
         }));
         cells.add(ccTile(grid, col + gap, 0, col, cap, "wifi", "Wi-Fi", this::wifiName, false,
-                () -> !wifiName().equals("Not Connected"), v -> {
-                    // The network name needs location access on Android 9+: ask on screen the first time.
-                    if (!Perms.hasLocation(this)) Perms.requestLocation(this);
-                    else Suggestions.start(this, new Intent(Settings.ACTION_WIFI_SETTINGS));
-                }));
-        cells.add(ccTile(grid, col + gap, cap + gap, col, cap, "moon", "Do Not Disturb", this::dndState, false,
-                () -> dndState().equals("On"), v -> toggleDnd()));
+                () -> !wifiName().equals("Not Connected"), v -> showWifi()));
+        cells.add(ccTile(grid, col + gap, cap + gap, col, cap, "bluetooth", "Bluetooth", this::bluetoothState,
+                false, () -> bluetoothState().equals("On"), v -> showBluetooth()));
         int y2 = 2 * (cap + gap);
         cells.add(ccTile(grid, 0, y2, col, cap, "audio", "Audio", this::audioOutput, false, null,
-                v -> Suggestions.start(this, new Intent("android.settings.SOUND_SETTINGS"))));
+                v -> showAudio()));
         cells.add(ccTile(grid, col + gap, y2, col, cap, "timer", "Sleep Timer", this::timerState, false,
                 () -> SleepReceiver.timerLeft(this) > 0, v -> showSleepTimer()));
         int y3 = y2 + cap + gap;
         View mem = ccTile(grid, 0, y3, w, cap, "memory", "Memory", this::memoryState, false, null, v -> cleanMemory());
         addMemoryBar(mem);
         cells.add(mem);
-        // Round shortcuts: Inputs or Accessibility, Bluetooth, Settings, Refresh.
+        // Round shortcuts: Inputs, Do Not Disturb, Settings, Refresh.
         int y4 = y3 + cap + gap;
-        String[] g = inputs.isEmpty() ? new String[]{"bluetooth", "accessibility", "gear", "refresh"}
-                : new String[]{"input", "bluetooth", "gear", "refresh"};
-        String[] names = inputs.isEmpty() ? new String[]{"Bluetooth devices", "Accessibility", "Settings", "Refresh"}
-                : new String[]{"Inputs", "Bluetooth devices", "Settings", "Refresh"};
+        String[] g = {"input", "moon", "gear", "refresh"};
+        String[] names = {"Inputs", "Do Not Disturb", "Settings", "Refresh"};
         for (int i = 0; i < g.length; i++) {
             String name = g[i];
-            View r = ccTile(grid, i * (small + gap), y4, small, small, name, null, null, false, null, v -> {
+            View r = ccTile(grid, i * (small + gap), y4, small, small, overlayOnly && name.equals("refresh") ? "close" : name, null, null, false,
+                    name.equals("moon") ? () -> dndState().equals("On") : null, v -> {
                 switch (name) {
-                    case "bluetooth": openBluetoothSettings(); break;
+                    case "moon": toggleDnd(); return;
                     case "accessibility": Suggestions.start(this, new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)); break;
                     case "input":
                         showInputs(ccButton);
@@ -3760,12 +3804,13 @@ public class MainActivity extends Activity {
                         openRefractSettings();
                         break;
                     default:
+                        if (overlayOnly) { finish(); return; }
                         refreshAll();
                         break;
                 }
                 closeProfilePicker();
             });
-            r.setContentDescription(names[i]);
+            r.setContentDescription(overlayOnly && name.equals("refresh") ? "Close" : names[i]);
             if (name.equals("refresh")) refreshButton = (ImageView) ((ViewGroup) r).getChildAt(0);
             cells.add(r);
         }
@@ -3791,6 +3836,230 @@ public class MainActivity extends Activity {
 
     interface Status {
         String get();
+    }
+
+    WifiPanel wifiPanel;
+
+    void showWifi() {
+        dropPicker();
+        stopSway(null);
+        popoverReturn = ccButton;
+        wifiPanel = new WifiPanel(this);
+        wifiPanel.open();
+    }
+
+    boolean bluetoothSettingsOpen;
+    boolean audioPicker;
+
+    String bluetoothState() {
+        try {
+            android.bluetooth.BluetoothAdapter adapter = android.bluetooth.BluetoothAdapter.getDefaultAdapter();
+            if (adapter == null) return "Unavailable";
+            if (!Perms.hasBluetooth(this)) return "Devices";
+            return adapter.isEnabled() ? "On" : "Off";
+        } catch (SecurityException e) { return "Devices"; }
+    }
+
+    void refreshBluetoothPanel() {
+        if (audioPicker) showAudio(); else showBluetooth();
+    }
+
+    /** Disconnecting A2DP lets Android return audio to the TV or HDMI output. */
+    void useTvAudio() {
+        if (bluetoothAudio == null) {
+            toast("Bluetooth audio is not ready; open Bluetooth settings");
+            return;
+        }
+        try {
+            List<android.bluetooth.BluetoothDevice> connected = bluetoothAudio.getConnectedDevices();
+            if (connected.isEmpty()) { toast("TV / HDMI audio is already selected"); return; }
+            java.lang.reflect.Method disconnect = bluetoothAudio.getClass().getMethod("disconnect", android.bluetooth.BluetoothDevice.class);
+            boolean sent = false;
+            for (android.bluetooth.BluetoothDevice device : connected) {
+                sent |= Boolean.TRUE.equals(disconnect.invoke(bluetoothAudio, device));
+            }
+            if (!sent) { toast("Could not switch audio; open Bluetooth settings"); return; }
+            toast("Switching to TV / HDMI audio");
+            handler.postDelayed(() -> {
+                if (pickerLayer != null && "bluetooth".equals(pickerLayer.getTag())) refreshBluetoothPanel();
+            }, 2000);
+        } catch (Exception e) { toast("Could not switch audio; open Bluetooth settings"); }
+    }
+    android.bluetooth.BluetoothProfile bluetoothAudio;
+    boolean bluetoothAudioRequested;
+
+    /** Fire OS 7 exposes its audio profile controls through legacy system methods. */
+    void loadBluetoothAudio(android.bluetooth.BluetoothAdapter adapter) {
+        if (android.os.Build.VERSION.SDK_INT >= 31 || bluetoothAudioRequested || adapter == null
+                || !Perms.hasBluetooth(this)) return;
+        bluetoothAudioRequested = true;
+        try {
+            if (!adapter.getProfileProxy(this, new android.bluetooth.BluetoothProfile.ServiceListener() {
+                @Override public void onServiceConnected(int profile, android.bluetooth.BluetoothProfile proxy) {
+                    bluetoothAudio = proxy;
+                    if (pickerLayer != null && "bluetooth".equals(pickerLayer.getTag())) refreshBluetoothPanel();
+                }
+                @Override public void onServiceDisconnected(int profile) { bluetoothAudio = null; }
+            }, android.bluetooth.BluetoothProfile.A2DP)) bluetoothAudioRequested = false;
+        } catch (SecurityException e) { bluetoothAudioRequested = false; }
+    }
+
+    boolean bluetoothAudioDevice(android.bluetooth.BluetoothDevice device) {
+        android.bluetooth.BluetoothClass kind = device.getBluetoothClass();
+        return kind != null && kind.getMajorDeviceClass()
+                == android.bluetooth.BluetoothClass.Device.Major.AUDIO_VIDEO;
+    }
+
+    String bluetoothAudioStatus(android.bluetooth.BluetoothDevice device) {
+        if (bluetoothAudio == null) return "Checking connection";
+        try {
+            int state = bluetoothAudio.getConnectionState(device);
+            if (state == android.bluetooth.BluetoothProfile.STATE_CONNECTED) return "Connected - select to disconnect";
+            if (state == android.bluetooth.BluetoothProfile.STATE_CONNECTING) return "Connecting";
+            if (state == android.bluetooth.BluetoothProfile.STATE_DISCONNECTING) return "Disconnecting";
+            return "Disconnected - select to connect";
+        } catch (SecurityException e) { return "Open Bluetooth settings"; }
+    }
+
+    void toggleBluetoothAudio(android.bluetooth.BluetoothDevice device) {
+        if (bluetoothAudio == null) { toast("Bluetooth audio is not ready"); return; }
+        try {
+            boolean connected = bluetoothAudio.getConnectionState(device) == android.bluetooth.BluetoothProfile.STATE_CONNECTED;
+            java.lang.reflect.Method method = bluetoothAudio.getClass().getMethod(
+                    connected ? "disconnect" : "connect", android.bluetooth.BluetoothDevice.class);
+            if (!Boolean.TRUE.equals(method.invoke(bluetoothAudio, device))) {
+                toast("Could not change connection; use Bluetooth Settings");
+                return;
+            }
+            toast(connected ? "Disconnecting" : "Connecting");
+            handler.postDelayed(() -> {
+                if (pickerLayer != null && "bluetooth".equals(pickerLayer.getTag())) refreshBluetoothPanel();
+            }, 2000);
+        } catch (Exception e) { toast("Connection unavailable; use Bluetooth Settings"); }
+    }
+
+
+    void openBluetoothFromPanel() {
+        bluetoothSettingsOpen = true;
+        openBluetoothSettings();
+    }
+
+    /** Paired devices use the same glass capsules as Control Center; system settings manages them. */
+    void showBluetooth() { showBluetoothPanel(false); }
+
+    void showAudio() { showBluetoothPanel(true); }
+
+    void showBluetoothPanel(boolean audioOnly) {
+        audioPicker = audioOnly;
+        dropPicker();
+        stopSway(null);
+        popoverReturn = ccButton;
+        FrameLayout layer = new FrameLayout(this);
+        layer.setTag("bluetooth");
+        layer.setClickable(true);
+        layer.setClipChildren(false);
+        View shade = new View(this);
+        shade.setBackground(new GradientDrawable(GradientDrawable.Orientation.RIGHT_LEFT,
+                new int[]{0x8C000000, 0x33000000, 0x00000000}));
+        layer.addView(shade, new FrameLayout.LayoutParams(screenW * 3 / 5,
+                ViewGroup.LayoutParams.MATCH_PARENT, Gravity.END));
+
+        int width = dp(284), pad = dp(14), row = dp(58), gap = dp(10);
+        FrameLayout panel = new FrameLayout(this);
+        panel.setClipChildren(false);
+        panel.setClipToPadding(false);
+        panel.setBackground(theme.panel(dp(30), unit));
+        panel.setElevation(dp(20));
+        TextView title = text(15, Ui.font(this, "semibold"), 1f);
+        title.setText(audioOnly ? "Audio Output" : "Bluetooth");
+        FrameLayout.LayoutParams titleLp = new FrameLayout.LayoutParams(width, dp(24));
+        titleLp.leftMargin = pad;
+        titleLp.topMargin = pad;
+        panel.addView(title, titleLp);
+
+        List<View> cells = new ArrayList<>();
+        FrameLayout content = new FrameLayout(this);
+        content.setClipChildren(false);
+        content.setClipToPadding(false);
+        int y = dp(8);
+        android.bluetooth.BluetoothAdapter adapter = android.bluetooth.BluetoothAdapter.getDefaultAdapter();
+        loadBluetoothAudio(adapter);
+        String message = null;
+        if (audioOnly) {
+            cells.add(ccTile(content, dp(8), y, width - dp(16), row, "audio", "TV / HDMI audio",
+                    () -> audioOutput().equals("TV Speakers") || audioOutput().equals("HDMI ARC")
+                            ? "Current output" : "Disconnect Bluetooth audio", false, v -> useTvAudio()));
+            y += row + gap;
+        }
+        if (adapter == null) message = "Bluetooth is unavailable on this TV";
+        else if (!Perms.hasBluetooth(this)) message = "Allow access to see paired devices";
+        else {
+            try {
+                if (!adapter.isEnabled()) message = "Bluetooth is off";
+                else {
+                    List<android.bluetooth.BluetoothDevice> devices = new ArrayList<>(adapter.getBondedDevices());
+                    java.util.Collections.sort(devices, (a, b) -> {
+                        String an = a.getName(), bn = b.getName();
+                        return (an == null ? "" : an).compareToIgnoreCase(bn == null ? "" : bn);
+                    });
+                    if (devices.isEmpty()) message = "No paired devices";
+                    int shown = 0;
+                    for (android.bluetooth.BluetoothDevice device : devices) {
+                        if (audioOnly && !bluetoothAudioDevice(device)) continue;
+                        shown++;
+                        String name = device.getName();
+                        if (name == null || name.trim().isEmpty()) name = "Unnamed device";
+                        boolean audio = android.os.Build.VERSION.SDK_INT < 31 && bluetoothAudioDevice(device);
+                        cells.add(ccTile(content, dp(8), y, width - dp(16), row, "bluetooth", name,
+                                audio ? () -> bluetoothAudioStatus(device) : () -> "Open Bluetooth settings",
+                                false, v -> { if (audio) toggleBluetoothAudio(device); else openBluetoothFromPanel(); }));
+                        y += row + gap;
+                    }
+                    if (audioOnly && shown == 0) message = "No paired Bluetooth audio devices";
+                }
+            } catch (SecurityException e) {
+                message = "Bluetooth access is unavailable";
+            }
+        }
+        if (message != null) {
+            TextView info = text(12, Ui.font(this, "regular"), 0.8f);
+            info.setText(message);
+            FrameLayout.LayoutParams infoLp = new FrameLayout.LayoutParams(width - dp(16), dp(35));
+            infoLp.leftMargin = dp(8);
+            infoLp.topMargin = y;
+            content.addView(info, infoLp);
+            y += dp(38);
+        }
+        if (adapter != null && !Perms.hasBluetooth(this)) {
+            cells.add(ccTile(content, dp(8), y, width - dp(16), row, "bluetooth", "Allow Access",
+                    null, false, v -> Perms.requestBluetooth(this)));
+            y += row + gap;
+        }
+        cells.add(ccTile(content, dp(8), y, width - dp(16), row, "gear", "Bluetooth Settings",
+                () -> "Connect, disconnect or pair", false, v -> openBluetoothFromPanel()));
+        y += row + dp(8);
+        ScrollView scroll = new ScrollView(this);
+        scroll.setClipChildren(false);
+        scroll.setFillViewport(false);
+        scroll.addView(content, new ScrollView.LayoutParams(width, y));
+        int scrollHeight = Math.min(y, dp(350));
+        FrameLayout.LayoutParams scrollLp = new FrameLayout.LayoutParams(width, scrollHeight);
+        scrollLp.leftMargin = pad;
+        scrollLp.topMargin = dp(40);
+        panel.addView(scroll, scrollLp);
+        FrameLayout.LayoutParams panelLp = new FrameLayout.LayoutParams(width + 2 * pad,
+                dp(40) + scrollHeight + pad, Gravity.TOP | Gravity.END);
+        panelLp.topMargin = dp(68);
+        panelLp.rightMargin = dockOuter;
+        layer.addView(panel, panelLp);
+        root.addView(layer, match());
+        pickerLayer = layer;
+        pickerCells = cells;
+        layer.setAlpha(0f);
+        panel.setTranslationY(-dp(8));
+        layer.animate().alpha(1f).setDuration(200).start();
+        panel.animate().translationY(0).setDuration(260).setInterpolator(EASE).start();
+        cells.get(0).requestFocus();
     }
 
     /** Fire TV exposes its paired-device screen through an Amazon-specific action. */
@@ -4300,7 +4569,7 @@ public class MainActivity extends Activity {
     void showInputs(View from) {
         List<Inputs.Input> list = Inputs.list(this);
         if (list.isEmpty()) {
-            toast("This TV has no inputs");
+            toast("For TV inputs, say: Alexa, switch to HDMI 1, 2 or 3");
             return;
         }
         dropPicker();
@@ -5258,6 +5527,7 @@ public class MainActivity extends Activity {
 
     /** Removes whichever overlay is open (stopping search's work if it was search). */
     void dropPicker() {
+        if (wifiPanel != null) { wifiPanel.close(); wifiPanel = null; }
         if (pickerLayer == null) return;
         if (search != null && pickerLayer == search.layer) releaseSearch();
         if (movies != null && pickerLayer == movies.layer) releaseMovies();
@@ -5273,6 +5543,9 @@ public class MainActivity extends Activity {
     @Override
     public void onRequestPermissionsResult(int req, String[] perms, int[] results) {
         super.onRequestPermissionsResult(req, perms, results);
+        if (req == Perms.REQ_LOCATION && wifiPanel != null) wifiPanel.permissionResult();
+        if (req == Perms.REQ_BLUETOOTH && pickerLayer != null
+                && "bluetooth".equals(pickerLayer.getTag())) refreshBluetoothPanel();
         if (req == SearchPanel.REQ_MIC && search != null) {
             search.onMicPermission(results.length > 0 && results[0] == PackageManager.PERMISSION_GRANTED);
         }
@@ -5410,6 +5683,8 @@ public class MainActivity extends Activity {
     View popoverReturn;
 
     void closeProfilePicker() {
+        if (wifiPanel != null) { wifiPanel.close(); wifiPanel = null; }
+        if (overlayOnly) { finish(); return; }
         if (pickerLayer == null) return;
         FrameLayout l = pickerLayer;
         pickerLayer = null;

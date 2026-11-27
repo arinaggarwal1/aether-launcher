@@ -22,6 +22,7 @@ import android.provider.Settings;
  */
 final class Perms {
     static final int REQ_LOCATION = 41;
+    static final int REQ_BLUETOOTH = 42;
 
     private Perms() {
     }
@@ -72,6 +73,15 @@ final class Perms {
 
     static void requestLocation(Activity a) {
         if (!hasLocation(a)) a.requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQ_LOCATION);
+    }
+
+    static boolean hasBluetooth(Activity a) {
+        return Build.VERSION.SDK_INT < 31 || a.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT)
+                == PackageManager.PERMISSION_GRANTED;
+    }
+
+    static void requestBluetooth(Activity a) {
+        if (!hasBluetooth(a)) a.requestPermissions(new String[]{Manifest.permission.BLUETOOTH_CONNECT}, REQ_BLUETOOTH);
     }
 
     /** Clean can only force-stop apps through Refract's accessibility switch: offer to turn it on. */

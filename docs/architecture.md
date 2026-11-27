@@ -25,6 +25,7 @@ source (Nayuki, MIT) under `src/io/nayuki/qrcodegen`.
 | `Profiles.java` | Profiles (max 3), unique emoji avatars, per-profile storage names |
 | `SleepReceiver.java` | Sleep via device admin (or PowerService); sleep timer alarm |
 | `Inputs.java` | TV inputs from the TV input framework; switching via the passthrough channel URI |
+| `WifiPanel.java` | Glass Wi-Fi picker, scanning, and supported network connections |
 | `News.java` | News for the top shelf: Indian newsrooms' RSS (India, local city, world), images, freshness |
 | `Perms.java` | On-screen permission and default-home requests, with adb only as a last resort |
 | `Weather.java` | Forecast from Open-Meteo, MET Norway or wttr.in (with fallback) in one format, IP location / city search, cache, refresh schedule |
@@ -115,3 +116,6 @@ who controls the device. That is why both keys are optional, personal and free.
 **Pexels licence.** The photos are bundled as built-in backgrounds of a launcher, with every
 photographer credited. The Pexels License allows this. It forbids selling unaltered copies or
 building a competing wallpaper service, and Refract does neither.
+
+The transparent `ControlCenterActivity` reuses Home's Control Center in a separate task so a
+remote shortcut can display it over another app and dismiss back to that app.
