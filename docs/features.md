@@ -61,6 +61,9 @@ after a successful check and does not interrupt Home navigation.
   **Show on Home Screen** brings them back. Each profile keeps its own choices.
 - **Device Settings** appears on Home by default and opens the TV's own Settings app. It can be
   moved or hidden like other apps; Aether Settings remains available in the status row.
+- **App names**: hold OK on an app and choose **Change Name**. The custom name is shared across
+  profiles and remains in Aether after app updates. Choose **Return to Default Name** in the same
+  menu to use the app's current original name again. This does not rename the app in Android.
 - **App images**: hold OK on an app and select **Change Image**. Keep the instructions open
   while you scan the QR code with your phone or open the displayed address on a computer on
   the same network. Choose an

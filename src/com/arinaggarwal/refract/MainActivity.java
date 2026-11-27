@@ -3456,7 +3456,9 @@ public class MainActivity extends Activity {
         if (com.arinaggarwal.refract.present.Presenter.enabled(this)) addPresentEntry();
         inputs = Inputs.list(this);
         if (Inputs.showCard(this) && !inputs.isEmpty()) addInputsEntry();
+        SharedPreferences appNames = getSharedPreferences("app_names", MODE_PRIVATE);
         for (AppEntry e : all.values()) {
+            e.label = appNames.getString(e.key, e.label);
             Drawable custom = AppArtwork.load(this, e.pkg);
             if (custom != null && !e.pkg.equals(getPackageName())) {
                 e.banner = custom;
@@ -3799,6 +3801,25 @@ public class MainActivity extends Activity {
             actions.add(() -> setHidden(a, true));
         }
         if (a.pkg != null && !a.pkg.equals(getPackageName())) {
+            labels.add("Change Name");
+            actions.add(() -> askName("Change App Name", a.label, 80, name -> {
+                getSharedPreferences("app_names", MODE_PRIVATE).edit().putString(a.key, name).apply();
+                reload(a.key);
+                // Some TV keyboards restore focus after the dialog dismisses; recover the tile if needed.
+                handler.postDelayed(() -> {
+                    View focused = getCurrentFocus();
+                    int target = indexOfKey(a.key);
+                    if (resumed && pickerLayer == null && menuLayer == null && target >= 0
+                            && (focused == null || !focused.isAttachedToWindow())) focusIndex(target);
+                }, 350);
+            }));
+            if (getSharedPreferences("app_names", MODE_PRIVATE).contains(a.key)) {
+                labels.add("Return to Default Name");
+                actions.add(() -> {
+                    getSharedPreferences("app_names", MODE_PRIVATE).edit().remove(a.key).apply();
+                    reload(a.key);
+                });
+            }
             labels.add("Change Image");
             actions.add(() -> chooseAppArtwork(a));
             if (AppArtwork.active(this, a.pkg)) {
@@ -5936,6 +5957,10 @@ public class MainActivity extends Activity {
     }
 
     void askName(String title, String current, NameResult r) {
+        askName(title, current, 20, r);
+    }
+
+    void askName(String title, String current, int maxLength, NameResult r) {
         android.widget.EditText in = new android.widget.EditText(this);
         in.setSingleLine(true);
         in.setText(current);
@@ -5944,16 +5969,24 @@ public class MainActivity extends Activity {
         int pad = dp(14);
         box.setPadding(pad, pad / 2, pad, 0);
         box.addView(in);
-        new AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+        final String[] saved = {null};
+        AlertDialog dialog = new AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
                 .setTitle(title)
                 .setView(box)
                 .setPositiveButton("Save", (d, w) -> {
                     String n = in.getText().toString().trim();
-                    // Rebuild only after the dialog dismisses, so focus returns to the new grid.
-                    if (!n.isEmpty()) handler.post(() -> r.ok(n.length() > 20 ? n.substring(0, 20) : n));
+                    if (!n.isEmpty()) {
+                        int count = n.codePointCount(0, n.length());
+                        saved[0] = count > maxLength ? n.substring(0, n.offsetByCodePoints(0, maxLength)) : n;
+                    }
                 })
                 .setNegativeButton("Cancel", null)
-                .show();
+                .create();
+        // Wait until the dialog has released window focus before rebuilding the underlying grid.
+        dialog.setOnDismissListener(d -> {
+            if (saved[0] != null) handler.postDelayed(() -> r.ok(saved[0]), 150);
+        });
+        dialog.show();
         in.requestFocus();
     }
 
